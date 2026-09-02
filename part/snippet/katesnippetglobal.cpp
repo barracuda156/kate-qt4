@@ -22,9 +22,7 @@
 #include "katesnippetglobal.h"
 
 #include <klocale.h>
-#include <kpluginfactory.h>
 #include <kaboutdata.h>
-#include <kpluginloader.h>
 #include <ktexteditor/view.h>
 #include <ktexteditor/document.h>
 #include <ktexteditor/codecompletioninterface.h>

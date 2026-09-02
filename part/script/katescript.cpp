@@ -38,6 +38,7 @@
 #include <klocale.h>
 #include <kstandarddirs.h>
 #include <klocalizedstring.h>
+#include <kglobal.h>
 
 //BEGIN conversion functions for Cursors and Ranges
 /** Converstion function from KTextEditor::Cursor to QtScript cursor */

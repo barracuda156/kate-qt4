@@ -1,15 +1,23 @@
-# install default libraries files
-install (DIRECTORY libraries/ DESTINATION ${DATA_INSTALL_DIR}/katepart/script/libraries
-         FILES_MATCHING PATTERN "*.js")
+# JavaScript for indentation, command line commands, libraries and the
+# "files" area where scripts keep additional data. The directory layout is
+# preserved below katepart/script/ in the resource tree.
+file(GLOB_RECURSE _kate_script_files RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+     libraries/*.js commands/*.js indentation/*.js files/*)
 
-# install default commands files
-install (DIRECTORY commands/ DESTINATION ${DATA_INSTALL_DIR}/katepart/script/commands
-         FILES_MATCHING PATTERN "*.js")
+set(_kate_script_dirs)
+foreach(_f ${_kate_script_files})
+    get_filename_component(_d ${_f} PATH)
+    list(APPEND _kate_script_dirs ${_d})
+endforeach()
+list(REMOVE_DUPLICATES _kate_script_dirs)
 
-# install default indentation files
-install (DIRECTORY indentation/ DESTINATION ${DATA_INSTALL_DIR}/katepart/script/indentation
-         FILES_MATCHING PATTERN "*.js")
-
-# install default files files
-# this is a place where scripts can store additional data
-install (DIRECTORY files/ DESTINATION ${DATA_INSTALL_DIR}/katepart/script/files)
+foreach(_d ${_kate_script_dirs})
+    set(_files)
+    foreach(_f ${_kate_script_files})
+        get_filename_component(_fd ${_f} PATH)
+        if(_fd STREQUAL _d)
+            list(APPEND _files ${CMAKE_CURRENT_SOURCE_DIR}/${_f})
+        endif()
+    endforeach()
+    kate_install_data(katepart/script/${_d} FILES ${_files})
+endforeach()

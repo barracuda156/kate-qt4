@@ -21,6 +21,8 @@ Boston, MA 02110-1301, USA.
 #include <ktexteditor/editor.h>
 #include <ktexteditor/editorchooser.h>
 #include <kcmdlineargs.h>
+#include <kglobal.h>
+#include <ksharedconfig.h>
 #include <kmessagebox.h>
 
 #include <QFileInfo>
@@ -48,7 +50,23 @@ KWriteApp::KWriteApp(KCmdLineArgs *m_args)
     iface->setContainer(this);
   }
 
+  // files opened from the Finder arrive as QFileOpenEvent -> openURLRequest
+  connect(this, SIGNAL(openURLRequest(QUrl)), this, SLOT(openRequestedUrl(QUrl)), Qt::QueuedConnection);
+
   init();
+}
+
+void KWriteApp::openRequestedUrl(const QUrl &url)
+{
+  if (url.isEmpty())
+    return;
+
+  KWrite *window = qobject_cast<KWrite*>(activeWindow());
+  if (!window)
+    window = new KWrite();
+
+  // KWrite::slotOpen() reuses the window when its document is untouched
+  window->slotOpen(KUrl(url));
 }
 
 KWriteApp::~KWriteApp()

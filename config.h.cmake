@@ -3,3 +3,4 @@
 #cmakedefine HAVE_FDATASYNC 1
 #cmakedefine HAVE_CTERMID 1
 #cmakedefine KActivities_FOUND 1
+#cmakedefine HAVE_BZIP2 1

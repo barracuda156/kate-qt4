@@ -875,7 +875,7 @@ QString KateViInputModeManager::getMarksOnTheLine(int line) {
   if ( m_view->viInputMode() ) {
     foreach (QChar markerChar, m_marks.keys()) {
       if  ( m_marks.value(markerChar)->line() == line )
-        res += markerChar + ":" + QString::number(m_marks.value(markerChar)->column()) + " ";
+        res += QString(markerChar) + ":" + QString::number(m_marks.value(markerChar)->column()) + " ";
     }
   }
 

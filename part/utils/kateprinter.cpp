@@ -57,6 +57,7 @@
 #include <QtGui/QLayout>
 #include <QtCore/QStringList>
 #include <kvbox.h>
+#include <kglobal.h>
 
 //BEGIN KatePrinter
 void KatePrinter::readSettings(QPrinter& printer)

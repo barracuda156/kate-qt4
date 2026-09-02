@@ -28,16 +28,19 @@
 #include <ktexteditor/editor.h>
 #include <ktexteditor/editorchooser.h>
 
-#include <kio/netaccess.h>
 
 #include <kaboutapplicationdialog.h>
+#include <kconfig.h>
+#include <kconfiggroup.h>
+#include <kglobal.h>
+#include <ksharedconfig.h>
+#include <ktoggleaction.h>
 #include <kaboutdata.h>
 #include <kaction.h>
 #include <kactioncollection.h>
 #include <kapplication.h>
 #include <kcmdlineargs.h>
 #include <kdeversion.h>
-#include <kdiroperator.h>
 #include <kedittoolbar.h>
 #include <kencodingfiledialog.h>
 #include <kiconloader.h>
@@ -56,6 +59,7 @@
 #include <KActivities/ResourceInstance>
 #endif
 
+#include <QtCore/QFile>
 #include <QtCore/QTimer>
 #include <QtCore/QTextCodec>
 
@@ -284,7 +288,8 @@ void KWrite::slotOpen( const KUrl& url )
 {
   if (url.isEmpty()) return;
 
-  if (!KIO::NetAccess::exists(url, KIO::NetAccess::SourceSide, this))
+  // local files only: there is no KIO in the pure-Qt build
+  if (!url.isLocalFile() || !QFile::exists(url.toLocalFile()))
   {
     KMessageBox::error (this, i18n("The file given could not be read; check whether it exists or is readable for the current user."));
     return;
@@ -679,7 +684,7 @@ void KWrite::modeChanged ( KTextEditor::Document *document )
   m_modeLabel->setText(mode);
 }
 
-extern "C" KDE_EXPORT int kdemain(int argc, char **argv)
+int main(int argc, char **argv)
 {
   KAboutData aboutData ( "kwrite", 0,
                          ki18n("KWrite"),

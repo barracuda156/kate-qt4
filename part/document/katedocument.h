@@ -54,7 +54,7 @@ namespace KTextEditor {
   class TemplateScript;
 }
 
-namespace KIO { class TransferJob; }
+namespace KIO { class Job; class TransferJob; }
 
 namespace Kate { class SwapFile; }
 
@@ -1236,7 +1236,6 @@ public:
     /**
      * loading job, we want to cancel with cancel in the loading message
      */
-    QPointer<KJob> m_loadingJob;
     
     /**
      * message to show during loading

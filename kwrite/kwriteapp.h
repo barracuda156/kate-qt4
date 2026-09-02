@@ -26,6 +26,7 @@ Boston, MA 02110-1301, USA.
 #include <ktexteditor/containerinterface.h>
 
 #include <QList>
+#include <QUrl>
 
 namespace KTextEditor
 {
@@ -70,6 +71,13 @@ class KWriteApp
      * further initialization
      */
     void init();
+
+  public Q_SLOTS:
+    /**
+     * Open a URL requested by the platform (Finder "open with", drag onto
+     * the dock icon). Reuses an unmodified empty window, else opens a new one.
+     */
+    void openRequestedUrl(const QUrl &url);
 
     /**
      * Editor instance

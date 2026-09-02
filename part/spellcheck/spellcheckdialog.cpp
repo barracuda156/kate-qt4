@@ -39,6 +39,7 @@
 #include <sonnet/dialog.h>
 #include <sonnet/backgroundchecker.h>
 #include <sonnet/speller.h>
+#include <kglobal.h>
 
 KateSpellCheckDialog::KateSpellCheckDialog( KateView* view )
   : QObject( view )

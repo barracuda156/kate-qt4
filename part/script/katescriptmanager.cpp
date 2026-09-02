@@ -35,6 +35,7 @@
 #include <kconfiggroup.h>
 #include <kstandarddirs.h>
 #include <kde_file.h>
+#include <kglobal.h>
 
 #include "kateglobal.h"
 #include "katecmd.h"

@@ -46,6 +46,7 @@
 
 #include <KAction>
 #include <KShortcut>
+#include <kglobal.h>
 
 #include "snippetstore.h"
 

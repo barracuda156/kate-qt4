@@ -25,9 +25,8 @@
 #include <QtCore/QDate>
 #include <QtCore/QRegExp>
 #include <kmessagebox.h>
-#include <kcalendarsystem.h>
 #include <unistd.h>
-#include <klibrary.h>
+#include <kuser.h>
 
 #include <kdebug.h>
 
@@ -40,9 +39,6 @@ bool TemplateInterface::expandMacros( QMap<QString, QString> &map, QWidget *pare
   QDateTime datetime = QDateTime::currentDateTime();
   QDate date = datetime.date();
   QTime time = datetime.time();
-  typedef QString (*kabcbridgecalltype)(const QString&,QWidget *,bool *ok);
-  kabcbridgecalltype kabcbridgecall=0;
-
   QStringList kabcitems;
   kabcitems<<"firstname"<<"lastname"<<"fullname"<<"email";
 
@@ -57,22 +53,18 @@ bool TemplateInterface::expandMacros( QMap<QString, QString> &map, QWidget *pare
       {}
       else if (kabcitems.contains(placeholder))
       {
-        if (kabcbridgecall==0)
-        {
-          KLibrary lib(QLatin1String("ktexteditorkabcbridge"));
-          kabcbridgecall=(kabcbridgecalltype)lib.resolveFunction("ktexteditorkabcbridge");
-          if (kabcbridgecall == 0)
-          {
-            KMessageBox::sorry(parentWindow,i18n("The template needs information about you, which is stored in your address book.\nHowever, the required plugin could not be loaded.\n\nPlease install the KDEPIM/Kontact package for your system."));
-            return false;
-          }
-        }
-        bool ok;
-        map[ placeholder ] = kabcbridgecall(placeholder,parentWindow,&ok);
-        if (!ok)
-        {
-          return false;
-        }
+        // no address book in the pure-Qt build: use the account information
+        const KUser user;
+        const QString fullName = user.property(KUser::FullName).toString();
+        if ( placeholder == "fullname" )
+          map[ placeholder ] = fullName.isEmpty() ? user.loginName() : fullName;
+        else if ( placeholder == "firstname" )
+          map[ placeholder ] = fullName.section(QLatin1Char(' '), 0, 0);
+        else if ( placeholder == "lastname" )
+          map[ placeholder ] = fullName.section(QLatin1Char(' '), 1);
+        else
+          map[ placeholder ] = QString();
+        Q_UNUSED(parentWindow)
       }
       else if ( placeholder == "date" )
       {
@@ -84,15 +76,15 @@ bool TemplateInterface::expandMacros( QMap<QString, QString> &map, QWidget *pare
       }
       else if ( placeholder == "year" )
       {
-        map[ placeholder ] = KGlobal::locale() ->calendar() ->formatDate(date, KLocale::Year, KLocale::LongNumber);
+        map[ placeholder ] = date.toString(QLatin1String("yyyy"));
       }
       else if ( placeholder == "month" )
       {
-        map[ placeholder ] = QString::number( KGlobal::locale() ->calendar() ->month( date ) );
+        map[ placeholder ] = QString::number( date.month() );
       }
       else if ( placeholder == "day" )
       {
-        map[ placeholder ] = QString::number( KGlobal::locale() ->calendar() ->day( date ) );
+        map[ placeholder ] = QString::number( date.day() );
       }
       else if ( placeholder == "hostname" )
       {

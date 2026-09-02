@@ -3279,8 +3279,8 @@ void KateViewInternal::clear()
 
 void KateViewInternal::wheelEvent(QWheelEvent* e)
 {
-  // zoom text, if ctrl is pressed
-  if (e->modifiers() == Qt::ControlModifier) {
+  // zoom text, if ctrl is pressed (and the platform wants wheel zooming, see MacPorts patch)
+  if (e->modifiers() == Qt::ControlModifier && KGlobalSettings::wheelMouseZooms()) {
     if (e->delta() > 0) {
       slotIncFontSizes();
     } else {

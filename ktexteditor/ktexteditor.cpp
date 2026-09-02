@@ -17,7 +17,6 @@
    Boston, MA 02110-1301, USA.
 */
 
-#include <QtDBus/QtDBus>
 
 #include "cursor.h"
 
@@ -58,8 +57,7 @@
 #include "modeinterface.h"
 
 #include <kparts/factory.h>
-#include <kpluginfactory.h>
-#include <kpluginloader.h>
+#include "editorchooser.h"
 #include <kdebug.h>
 
 using namespace KTextEditor;
@@ -147,44 +145,20 @@ bool View::insertText (const QString &text )
 #ifndef KDE_NO_DEPRECATED
 Plugin *KTextEditor::createPlugin ( KService::Ptr service, QObject *parent )
 {
-  QString error;
-  Plugin* plugin = service->createInstance<KTextEditor::Plugin>(parent, QVariantList(), &error);
-  if (!plugin)
-    kWarning() << error;
-  return plugin;
+  // no service based plugin loading in the pure-Qt build
+  Q_UNUSED(service)
+  Q_UNUSED(parent)
+  kWarning() << "KTextEditor::createPlugin: plugins are not supported in this build";
+  return 0;
 }
 #endif
 
-struct KTextEditorFactorySet : public QSet<KPluginFactory*>
-{
-  KTextEditorFactorySet();
-  ~KTextEditorFactorySet();
-};
-K_GLOBAL_STATIC(KTextEditorFactorySet, s_factories)
-KTextEditorFactorySet::KTextEditorFactorySet() {
-  // K_GLOBAL_STATIC is cleaned up *after* Q(Core)Application is gone
-  // but we have to cleanup before -> use qAddPostRoutine
-  qAddPostRoutine(s_factories.destroy);
-}
-KTextEditorFactorySet::~KTextEditorFactorySet() {
-  qRemovePostRoutine(s_factories.destroy); // post routine is installed!
-  qDeleteAll(*this);
-}
-
 Editor *KTextEditor::editor(const char *libname)
 {
-  KPluginFactory *fact=KPluginLoader(libname).factory();
-
-  KTextEditor::Factory *ef=qobject_cast<KTextEditor::Factory*>(fact);
-
-  if (!ef) {
-    delete fact;
-    return 0;
-  }
-
-  s_factories->insert(fact);
-
-  return ef->editor();
+  // the only editor component is the built-in KatePart; every library name
+  // resolves to it (see KTextEditor::setEditorCreator in editorchooser.h)
+  Q_UNUSED(libname)
+  return KTextEditor::createDefaultEditor();
 }
 
 ConfigPage::ConfigPage ( QWidget *parent )

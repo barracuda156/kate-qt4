@@ -41,7 +41,6 @@
 #include "katemodeconfigpage.h"
 #include "kateview.h"
 #include "katepartpluginmanager.h"
-#include "kpluginselector.h"
 #include "spellcheck/spellcheck.h"
 
 // auto generated ui files
@@ -59,10 +58,6 @@
 
 #include <ktexteditor/plugin.h>
 
-#include <kio/job.h>
-#include <kio/jobclasses.h>
-#include <kio/netaccess.h>
-
 #include <kapplication.h>
 #include <kcharsets.h>
 #include <kcolorbutton.h>
@@ -71,6 +66,7 @@
 #include <kcombobox.h>
 #include <kconfig.h>
 #include <kdebug.h>
+#include <kdeversion.h>
 #include <kfontdialog.h>
 #include <kglobal.h>
 #include <kglobalsettings.h>
@@ -108,6 +104,11 @@
 #include <QtGui/QSlider>
 #include <QtCore/QStringList>
 #include <QtGui/QTabWidget>
+#include <QtGui/QListWidget>
+#include <QtCore/QEventLoop>
+#include <QtNetwork/QNetworkAccessManager>
+#include <QtNetwork/QNetworkReply>
+#include <QtNetwork/QNetworkRequest>
 #include <QtCore/QTextCodec>
 #include <QtCore/QTextStream>
 #include <QtGui/QToolButton>
@@ -1159,25 +1160,23 @@ KatePartPluginConfigPage::KatePartPluginConfigPage (QWidget *parent)
   QVBoxLayout *layout = new QVBoxLayout;
   layout->setMargin(0);
 
-  plugins.clear();
-
-  int i = 0;
+  // qt4compat: plain check list instead of KPluginSelector (no KService)
+  m_list = new QListWidget(this);
   foreach (const KatePartPluginInfo &info, KatePartPluginManager::self()->pluginList())
   {
-    KPluginInfo it(info.service());
-    it.setPluginEnabled(info.load);
-    plugins.append(it);
-    i++;
+    QListWidgetItem *item = new QListWidgetItem(info.service() ? info.service()->name() : info.saveName(), m_list);
+    item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
+    item->setCheckState(info.load ? Qt::Checked : Qt::Unchecked);
+  }
+  if (m_list->count() == 0)
+  {
+    QListWidgetItem *item = new QListWidgetItem(i18n("No editor plugins are available in this build."), m_list);
+    item->setFlags(Qt::NoItemFlags);
   }
 
-  selector = new KPluginSelector(0);
+  connect(m_list, SIGNAL(itemChanged(QListWidgetItem*)), this, SLOT(slotChanged()));
 
-  connect(selector, SIGNAL(changed(bool)), this, SLOT(slotChanged()));
-  connect(selector, SIGNAL(configCommitted(QByteArray)), this, SLOT(slotChanged()));
-
-  selector->addPlugins(plugins, KPluginSelector::IgnoreConfigFile, i18n("Editor Plugins"), "Editor");
-
-  layout->addWidget(selector);
+  layout->addWidget(m_list);
   setLayout(layout);
 }
 
@@ -1187,11 +1186,10 @@ KatePartPluginConfigPage::~KatePartPluginConfigPage ()
 
 void KatePartPluginConfigPage::apply ()
 {
-  selector->updatePluginsState();
-
   KatePartPluginList &katePluginList = KatePartPluginManager::self()->pluginList();
-  for (int i=0; i < plugins.count(); i++) {
-    if (plugins[i].isPluginEnabled()) {
+  for (int i=0; i < katePluginList.count() && i < m_list->count(); i++) {
+    const bool enabled = m_list->item(i)->checkState() == Qt::Checked;
+    if (enabled) {
       if (!katePluginList[i].load) {
         KatePartPluginManager::self()->loadPlugin(katePluginList[i]);
         KatePartPluginManager::self()->enablePlugin(katePluginList[i]);
@@ -1202,22 +1200,27 @@ void KatePartPluginConfigPage::apply ()
         KatePartPluginManager::self()->unloadPlugin(katePluginList[i]);
       }
     }
+    m_list->item(i)->setCheckState(katePluginList[i].load ? Qt::Checked : Qt::Unchecked);
   }
 }
 
 void KatePartPluginConfigPage::reload ()
 {
-  selector->load();
+  const KatePartPluginList &katePluginList = KatePartPluginManager::self()->pluginList();
+  for (int i=0; i < katePluginList.count() && i < m_list->count(); i++)
+    m_list->item(i)->setCheckState(katePluginList[i].load ? Qt::Checked : Qt::Unchecked);
 }
 
 void KatePartPluginConfigPage::reset ()
 {
-  selector->load();
+  reload();
 }
 
 void KatePartPluginConfigPage::defaults ()
 {
-  selector->defaults();
+  const KatePartPluginList &katePluginList = KatePartPluginManager::self()->pluginList();
+  for (int i=0; i < katePluginList.count() && i < m_list->count(); i++)
+    m_list->item(i)->setCheckState(katePluginList[i].isEnabledByDefault() ? Qt::Checked : Qt::Unchecked);
 }
 //END KatePartPluginConfigPage
 
@@ -1248,14 +1251,15 @@ KateHlDownloadDialog::KateHlDownloadDialog(QWidget *parent, const char *name, bo
   new QLabel(i18n("<b>Note:</b> New versions are selected automatically."), vbox);
   setButtonIcon(User1, KIcon("dialog-ok"));
 
-  transferJob = KIO::get(
-    KUrl(QString(HLDOWNLOADPATH)
+  // qt4compat: fetch the list with QtNetwork instead of KIO
+  m_nam = new QNetworkAccessManager(this);
+  QNetworkRequest request(QUrl(QString(HLDOWNLOADPATH)
        + QString("update-")
        + KateGlobal::katePartVersion()
-       + QString(".xml")), KIO::Reload );
-  connect(transferJob, SIGNAL(data(KIO::Job*,QByteArray)),
-    this, SLOT(listDataReceived(KIO::Job*,QByteArray)));
-//        void data( KIO::Job *, const QByteArray &data);
+       + QString(".xml")));
+  request.setAttribute(QNetworkRequest::CacheLoadControlAttribute, QNetworkRequest::AlwaysNetwork);
+  m_reply = m_nam->get(request);
+  connect(m_reply, SIGNAL(finished()), this, SLOT(listDownloadFinished()));
   resize(450, 400);
   connect(this,SIGNAL(user1Clicked()),this,SLOT(slotUser1()));
 }
@@ -1280,21 +1284,24 @@ unsigned KateHlDownloadDialog::parseVersion(const QString& version_string)
   return KDE_MAKE_VERSION(vn[0], vn[1], vn[2]);
 }
 
-void KateHlDownloadDialog::listDataReceived(KIO::Job *, const QByteArray &data)
+void KateHlDownloadDialog::listDownloadFinished()
 {
-  if (!transferJob || transferJob->isErrorPage())
+  QNetworkReply *reply = m_reply;
+  m_reply = 0;
+  if (!reply)
+    return;
+  reply->deleteLater();
+
+  if (reply->error() != QNetworkReply::NoError)
   {
     enableButton( User1, false );
-    if (data.size()==0)
-      KMessageBox::error(this,i18n("The list of highlightings could not be found on / retrieved from the server"));
+    KMessageBox::error(this,i18n("The list of highlightings could not be found on / retrieved from the server"));
     return;
   }
 
-  listData+=QString(data);
+  listData = QString::fromUtf8(reply->readAll());
   kDebug(13000)<<QString("CurrentListData: ")<<listData;
-  kDebug(13000)<<QString("Data length: %1").arg(data.size());
   kDebug(13000)<<QString("listData length: %1").arg(listData.length());
-  if (data.size()==0)
   {
     if (listData.length()>0)
     {
@@ -1366,7 +1373,22 @@ void KateHlDownloadDialog::slotUser1()
     QString filename=src.fileName(KUrl::ObeyTrailingSlash);
     QString dest = destdir+filename;
 
-    KIO::NetAccess::download(src,dest, this);
+    // qt4compat: synchronous download with QtNetwork
+    QNetworkReply *reply = m_nam->get(QNetworkRequest(QUrl(src)));
+    QEventLoop loop;
+    connect(reply, SIGNAL(finished()), &loop, SLOT(quit()));
+    loop.exec();
+    if (reply->error() == QNetworkReply::NoError)
+    {
+      QFile f(dest);
+      if (f.open(QIODevice::WriteOnly | QIODevice::Truncate))
+        f.write(reply->readAll());
+      else
+        KMessageBox::error(this, i18n("Could not write to %1", dest));
+    }
+    else
+      KMessageBox::error(this, i18n("Could not download %1", src.prettyUrl()));
+    reply->deleteLater();
   }
 
   // update Config !!

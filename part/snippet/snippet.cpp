@@ -31,7 +31,7 @@
 #include "katesnippetglobal.h"
 #include <KActionCollection>
 #include <KAction>
-#include <KParts/MainWindow>
+#include <kparts/mainwindow.h>
 
 Snippet::Snippet()
     : QStandardItem(i18n("<empty snippet>")), m_action(0)

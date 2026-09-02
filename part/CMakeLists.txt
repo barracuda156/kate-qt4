@@ -1,4 +1,4 @@
-# define project
+# KatePart on plain Qt 4 + qt4compat: one static library, no KParts plugin.
 project(katepart)
 
 # these subdirs have their own CMakeLists
@@ -30,7 +30,7 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/swapfile
   ${CMAKE_CURRENT_SOURCE_DIR}/variableeditor
   ${CMAKE_CURRENT_SOURCE_DIR}/kte5
-  ${KDE4_KIO_INCLUDES}
+  ${CMAKE_CURRENT_BINARY_DIR}
 )
 
 # our sources
@@ -224,44 +224,20 @@ snippet/editrepository.ui
 snippet/editsnippet.ui
 )
 
-add_definitions ( -DKDE_DEFAULT_DEBUG_AREA=13000 )
+add_definitions ( -DKDE_DEFAULT_DEBUG_AREA=13000 -DKATEPART_STATIC_LIBS )
 
-kde4_add_ui_files(katepart_PART_SRCS ${katepart_PART_UI} )
+kate_add_ui_files(katepart_PART_SRCS ${katepart_PART_UI})
+kate_automoc(katepart_MOC_SRCS ${katepart_PART_SRCS})
 
-kde4_add_library (katepartinterfaces ${LIBRARY_TYPE} ${katepart_PART_SRCS} )
+add_library (katepartinterfaces STATIC ${katepart_PART_SRCS} ${katepart_MOC_SRCS})
 
-target_link_libraries (
-   katepartinterfaces
-   LINK_PUBLIC ${KDE4_KPARTS_LIBS}
-   LINK_PRIVATE ${KDE4_KDECORE_LIBS} ${KDE4_KPARTS_LIBS} ${KDE4_KCMUTILS_LIBS} ${KDE4_KTEXTEDITOR_LIBS} ${QT_QTSCRIPT_LIBRARY} ${KDE_4_4_LIBS_NEEDED} ${KDE4_KNEWSTUFF3_LIBS}
+target_link_libraries (katepartinterfaces
+  ktexteditor
+  qt4compat
+  ${QT_QTSCRIPT_LIBRARY}
+  ${QT_QTNETWORK_LIBRARY}
+  ${QT_QTXML_LIBRARY}
+  ${QT_QTGUI_LIBRARY}
+  ${QT_QTCORE_LIBRARY}
+  ${ZLIB_LIBRARIES}
 )
-
-set_target_properties(
-  katepartinterfaces PROPERTIES
-  VERSION ${GENERIC_LIB_VERSION}
-  SOVERSION ${GENERIC_LIB_SOVERSION}
-)
-
-# kde 4 final support
-if(KDE4_ENABLE_FINAL)
-   macro_add_file_dependencies(${CMAKE_CURRENT_BINARY_DIR}/katepartinterfaces_final_cpp.cpp )
-else(KDE4_ENABLE_FINAL)
-   macro_add_file_dependencies(${CMAKE_CURRENT_SOURCE_DIR}/script/katescript.cpp )
-endif(KDE4_ENABLE_FINAL)
-
-# install kate part interfaces
-install (TARGETS katepartinterfaces EXPORT kdelibsLibraryTargets ${INSTALL_TARGETS_DEFAULT_ARGS})
-
-# kate part itself just is interfaces + the factory
-kde4_add_plugin (katepart utils/katefactory.cpp)
-
-# link the part, use kate part interfaces + kde stuff
-target_link_libraries (katepart
-  ${KDE4_KDECORE_LIBS} ${KDE4_KPARTS_LIBS}
-  ${KDE4_KCMUTILS_LIBS} ${KDE4_KTEXTEDITOR_LIBS} ${QT_QTSCRIPT_LIBRARY} katepartinterfaces)
-
-# install the part
-install (TARGETS katepart DESTINATION ${PLUGIN_INSTALL_DIR})
-
-# install the snippet stuff
-install( FILES snippet/ktexteditor_codesnippets_core.knsrc DESTINATION  ${CONFIG_INSTALL_DIR} )

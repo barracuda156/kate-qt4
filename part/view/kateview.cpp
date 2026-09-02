@@ -92,6 +92,7 @@
 #include <QtGui/QKeyEvent>
 #include <QtGui/QLayout>
 #include <QtCore/QMimeData>
+#include <sys/stat.h>
 
 //#define VIEW_RANGE_DEBUG
 

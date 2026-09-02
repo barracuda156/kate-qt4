@@ -36,6 +36,7 @@
 
 #include <kservicetypetrader.h>
 #include <kdebug.h>
+#include <kdeversion.h>
 
 KatePartPluginInfo::KatePartPluginInfo(KService::Ptr service)
     : m_pluginInfo(service)
@@ -215,12 +216,12 @@ void KatePartPluginManager::loadPlugin (KatePartPluginInfo &item)
     Q_ASSERT( openDependencies.empty() );
   }
 
-  // try to load, else reset load flag!
-  QString error;
-  item.plugin = item.service()->createInstance<KTextEditor::Plugin>(this, QVariantList(), &error);
-  if ( !item.plugin )
-    kWarning() << "failed to load plugin" << item.service()->name() << ":" << error;
-  item.load = (item.plugin != 0);
+  // qt4compat: there is no plugin loader without KService/ksycoca, so
+  // editor plugins can not be loaded in this build; keep the bookkeeping sane
+  item.plugin = 0;
+  if (item.service())
+    kWarning() << "editor plugins are not available in this build, cannot load" << item.service()->name();
+  item.load = false;
 }
 
 void KatePartPluginManager::unloadPlugin (KatePartPluginInfo &item)

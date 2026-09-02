@@ -38,7 +38,6 @@
 #include <kdebug.h>
 #include <klocale.h>
 #include <kurl.h>
-#include <kshellcompletion.h>
 
 #include <QDir>
 #include <QtCore/QRegExp>

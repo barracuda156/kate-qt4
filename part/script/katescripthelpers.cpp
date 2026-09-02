@@ -34,6 +34,7 @@
 #include <klocale.h>
 #include <klocalizedstring.h>
 #include <kstandarddirs.h>
+#include <kglobal.h>
 
 namespace Kate {
 namespace Script {

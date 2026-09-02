@@ -32,6 +32,16 @@ namespace KTextEditor
 {
 
 /**
+ * Editor component registry (qt4compat build). There is no plugin loading:
+ * the editor implementation (KatePart) registers a creator function once at
+ * startup and every lookup (EditorChooser::editor(), KTextEditor::editor())
+ * returns what it produces.
+ */
+typedef Editor *(*EditorCreator)();
+KTEXTEDITOR_EXPORT void setEditorCreator(EditorCreator creator);
+KTEXTEDITOR_EXPORT Editor *createDefaultEditor();
+
+/**
  * \brief Editor Component Chooser.
  *
  * Topics:

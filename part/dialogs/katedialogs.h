@@ -55,19 +55,11 @@ class KateDocument;
 class KateView;
 class KatePartPluginInfo;
 
-namespace KIO
-{
-  class Job;
-  class TransferJob;
-}
-
 class KComboBox;
 class KShortcutsEditor;
 class KTemporaryFile;
 class KIntNumInput;
 class KIntSpinBox;
-class KPluginSelector;
-class KPluginInfo;
 class KProcess;
 
 class QCheckBox;
@@ -366,8 +358,7 @@ class KatePartPluginConfigPage : public KateConfigPage
     void defaults ();
 
   private:
-    KPluginSelector *selector;
-    QList<KPluginInfo> plugins;
+    class QListWidget *m_list;
 };
 
 
@@ -383,10 +374,11 @@ class KateHlDownloadDialog: public KDialog
     static unsigned parseVersion(const QString&);
     class QTreeWidget  *list;
     class QString listData;
-    KIO::TransferJob *transferJob;
+    class QNetworkAccessManager *m_nam;
+    class QNetworkReply *m_reply;
 
   private Q_SLOTS:
-    void listDataReceived(KIO::Job *, const QByteArray &data);
+    void listDownloadFinished();
 
   public Q_SLOTS:
     void slotUser1();

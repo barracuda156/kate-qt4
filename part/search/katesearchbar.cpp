@@ -44,6 +44,7 @@
 #include <QtGui/QComboBox>
 #include <QtGui/QCheckBox>
 #include <QtGui/QShortcut>
+#include <klocale.h>
 
 // Turn debug messages on/off here
 // #define FAST_DEBUG_ENABLE

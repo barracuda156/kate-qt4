@@ -58,11 +58,6 @@
 #include <ktexteditor/plugin.h>
 #include <ktexteditor/loadsavefiltercheckplugin.h>
 
-#include <kio/job.h>
-#include <kio/jobuidelegate.h>
-#include <kio/netaccess.h>
-#include <kfileitem.h>
-
 #include <klocale.h>
 #include <kglobal.h>
 #include <kmenu.h>
@@ -79,9 +74,6 @@
 #include <kstandarddirs.h>
 #include <kstringhandler.h>
 
-#include <kservicetypetrader.h>
-
-#include <QtDBus/QtDBus>
 #include <QtGui/QApplication>
 #include <QtCore/QTimer>
 #include <QtCore/QFile>
@@ -98,7 +90,6 @@
 #define EDIT_DEBUG if (0) kDebug()
 #endif
 
-static int dummy = 0;
 
 inline bool isStartBracket( const QChar& c ) { return c == '{' || c == '[' || c == '('; }
 inline bool isEndBracket  ( const QChar& c ) { return c == '}' || c == ']' || c == ')'; }
@@ -150,12 +141,6 @@ KateDocument::KateDocument ( bool bSingleViewMode, bool bBrowserView,
    */
   setProgressInfoEnabled (false);
   
-  QString pathName ("/Kate/Document/%1");
-  pathName = pathName.arg (++dummy);
-
-  // my dbus object
-  QDBusConnection::sessionBus().registerObject (pathName, this, QDBusConnection::ExportAdaptors | QDBusConnection::ExportScriptableSlots);
-
   // register doc at factory
   KateGlobal::self()->registerDocument(this);
 
@@ -2148,18 +2133,9 @@ bool KateDocument::saveFile()
       else
         backupSuccess = true;
     }
-    else // remote file mode, kio
+    else // remote file mode: no KIO in this build, nothing we can back up
     {
-      // get the right permissions, start with safe default
-      KIO::UDSEntry fentry;
-      if (KIO::NetAccess::stat (url(), fentry, QApplication::activeWindow())) {
-        // do a evil copy which will overwrite target if possible
-        KFileItem item (fentry, url());
-        KIO::FileCopyJob *job = KIO::file_copy ( url(), u, item.permissions(), KIO::Overwrite );
-        backupSuccess = KIO::NetAccess::synchronousRun(job, QApplication::activeWindow());
-      }
-      else
-        backupSuccess = true;
+      backupSuccess = true;
     }
 
     // backup has failed, ask user how to proceed
@@ -4876,9 +4852,8 @@ void KateDocument::slotStarted (KIO::Job *job)
       
       /**
        * perhaps some message about loading in one second!
-       * remember job pointer, we want to be able to kill it!
+       * (qt4compat: there is no KIO job to remember or kill in this build)
        */
-      m_loadingJob = job;
       QTimer::singleShot (1000, this, SLOT(slotTriggerLoadingMessage()));
     }
   }
@@ -4947,13 +4922,9 @@ void KateDocument::slotTriggerLoadingMessage ()
   m_loadingMessage->setPosition(KTextEditor::Message::TopInView);
 
   /**
-   * if around job: add cancel action
+   * qt4compat: loading is synchronous and local, there is no job to abort,
+   * so no cancel action is offered
    */
-  if (m_loadingJob) {
-    QAction *cancel = new QAction ( i18n ("&Abort Loading"), 0);
-    connect (cancel, SIGNAL(triggered()), this, SLOT(slotAbortLoading()));
-    m_loadingMessage->addAction (cancel);
-  }
   
   /**
    * really post message
@@ -4964,17 +4935,8 @@ void KateDocument::slotTriggerLoadingMessage ()
 void KateDocument::slotAbortLoading ()
 {
   /**
-   * no job, no work
+   * qt4compat: no KIO job, nothing to abort
    */
-  if (!m_loadingJob)
-    return;
-  
-  /**
-   * abort loading if any job
-   * signal results!
-   */
-  m_loadingJob->kill (KJob::EmitResult);
-  m_loadingJob = 0;
 }
 
 bool KateDocument::save()

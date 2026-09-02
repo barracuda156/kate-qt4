@@ -44,6 +44,8 @@
 
 #include <QtGui/QPushButton>
 #include <QtGui/QProgressDialog>
+#include <kcombobox.h>
+#include <kglobal.h>
 //END
 
 

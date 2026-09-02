@@ -41,7 +41,7 @@
 #include "snippet/katesnippetglobal.h"
 
 #include <klocale.h>
-#include <kservicetypetrader.h>
+#include <ktexteditor/editorchooser.h>
 #include <kdirwatch.h>
 #include <kdebug.h>
 #include <kdeversion.h>
@@ -52,6 +52,7 @@
 #include <QtCore/QPointer>
 #include <QtGui/QBoxLayout>
 #include <QApplication>
+#include <kglobal.h>
 
 KateGlobal *KateGlobal::s_self = 0;
 
@@ -462,9 +463,31 @@ KIcon KateGlobal::configPageIcon (int number) const
   return KIcon("document-properties");
 }
 
+namespace {
+  /**
+   * qt4compat: KatePart is linked statically, there is no plugin factory.
+   * Register the in-process editor with KTextEditor::EditorChooser.
+   */
+  KTextEditor::Editor *kateEditorCreator ()
+  {
+    return KateGlobal::self ();
+  }
+
+  struct KateEditorRegistrar
+  {
+    KateEditorRegistrar ()
+    {
+      KTextEditor::setEditorCreator (kateEditorCreator);
+    }
+  };
+
+  static KateEditorRegistrar s_kateEditorRegistrar;
+}
+
 KateGlobal *KateGlobal::self ()
 {
   if (!s_self) {
+    KTextEditor::setEditorCreator (kateEditorCreator);
     new KateGlobal ();
   }
 

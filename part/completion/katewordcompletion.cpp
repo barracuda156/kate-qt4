@@ -34,7 +34,6 @@
 
 #include <kconfig.h>
 #include <kdialog.h>
-#include <kpluginfactory.h>
 #include <klocale.h>
 #include <kaction.h>
 #include <kactioncollection.h>

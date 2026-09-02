@@ -1,3 +1,3 @@
-install( FILES katepartui.rc katepartsimpleui.rc  DESTINATION  ${DATA_INSTALL_DIR}/katepart )
-install( FILES katepart.desktop  DESTINATION  ${SERVICES_INSTALL_DIR} )
-install( FILES katemoderc kateschemarc katesyntaxhighlightingrc DESTINATION  ${CONFIG_INSTALL_DIR} )
+# XMLGUI definitions for the part and the default config files
+kate_install_data(katepart FILES katepartui.rc katepartsimpleui.rc)
+kate_install_data(config FILES katemoderc kateschemarc katesyntaxhighlightingrc)

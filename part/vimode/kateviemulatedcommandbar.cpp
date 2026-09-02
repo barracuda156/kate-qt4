@@ -34,7 +34,7 @@
 #include <QtGui/QLabel>
 #include <QtGui/QCompleter>
 #include <QtGui/QApplication>
-#include <KDE/KColorScheme>
+#include <kcolorscheme.h>
 #include <algorithm>
 
 namespace

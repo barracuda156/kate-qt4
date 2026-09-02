@@ -25,6 +25,7 @@
 #include "katetextline.h"
 
 #include <KLocalizedString>
+#include <kicon.h>
 
 KateKeywordCompletionModel::KateKeywordCompletionModel(QObject* parent)
     : CodeCompletionModel2(parent)

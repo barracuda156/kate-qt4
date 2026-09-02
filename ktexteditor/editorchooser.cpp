@@ -17,15 +17,15 @@
  *  Boston, MA 02110-1301, USA.
  */
 #include <editorchooser.h>
-#include <editorchooser.moc>
+#include "editorchooser.moc"
 
 #include <QtGui/QComboBox>
 #include <QtCore/QStringList>
 #include <QtGui/QLabel>
 #include <QtGui/QLayout>
 
-#include <kmimetypetrader.h>
 #include <kconfig.h>
+#include <ksharedconfig.h>
 #include <klocale.h>
 #include <kglobal.h>
 
@@ -50,38 +50,33 @@ namespace KTextEditor
   };
 }
 
+static KTextEditor::EditorCreator s_editorCreator = 0;
+
+void KTextEditor::setEditorCreator(KTextEditor::EditorCreator creator)
+{
+  s_editorCreator = creator;
+}
+
+KTextEditor::Editor *KTextEditor::createDefaultEditor()
+{
+  if (!s_editorCreator)
+    return 0;
+  return s_editorCreator();
+}
+
 EditorChooser::EditorChooser(QWidget *parent)
   : QWidget(parent)
 {
   d = new PrivateEditorChooser ();
-
   d->chooser = new Ui::EditorChooser();
   d->chooser->setupUi(this);
 
-  KService::List offers = KMimeTypeTrader::self()->query("text/plain", "KTextEditor/Document");
-  KConfigGroup config = KSharedConfig::openConfig("default_components")->group("KTextEditor");
-  QString editor = config.readPathEntry("embeddedEditor", QString());
+  // the only component available is the built-in KatePart
+  d->chooser->editorCombo->addItem(i18n("System Default (currently: %1)", QLatin1String("KatePart")));
+  d->chooser->editorCombo->addItem(QLatin1String("KatePart"));
+  d->elements.append(QLatin1String("katepart"));
 
-  if (editor.isEmpty()) editor = "katepart";
-
-  // search default component
-  for (KService::List::Iterator it = offers.begin(); it != offers.end(); ++it)
-  {
-    if ((*it)->desktopEntryName().contains(editor))
-    {
-      d->chooser->editorCombo->addItem(i18n("System Default (currently: %1)", (*it)->name()));
-      break;
-    }
-  }
-
-  // add list of all available components
-  for (KService::List::Iterator it = offers.begin(); it != offers.end(); ++it)
-  {
-    d->chooser->editorCombo->addItem((*it)->name());
-    d->elements.append((*it)->desktopEntryName());
-  }
   d->chooser->editorCombo->setCurrentIndex(0);
-
   connect(d->chooser->editorCombo,SIGNAL(activated(int)),this,SIGNAL(changed()));
 
   setMinimumSize(sizeHint());
@@ -118,27 +113,10 @@ void EditorChooser::writeAppSetting(const QString& postfix)
 KTextEditor::Editor *EditorChooser::editor(const QString& postfix,
                                            bool fallBackToKatePart)
 {
-  // try to read the used library from the application's config
-  KConfigGroup cg(KGlobal::config(), "KTEXTEDITOR:" + postfix);
-  QString editor = cg.readPathEntry("editor", QString());
-  if (editor.isEmpty())
-  {
-    // there is no library set in the application's config,
-    // fall back to KDE's system default
-    KConfig config("default_components");
-    editor = config.group("KTextEditor").readPathEntry("embeddedEditor", "katepart");
-  }
-
-  KService::Ptr serv = KService::serviceByDesktopName(editor);
-  if (serv)
-  {
-    KTextEditor::Editor *tmpEd = KTextEditor::editor(serv->library().toLatin1());
-    if (tmpEd) return tmpEd;
-  }
-  if (fallBackToKatePart)
-    return KTextEditor::editor("katepart");
-
-  return 0;
+  // the application's config may name an editor, but only KatePart exists
+  Q_UNUSED(postfix)
+  Q_UNUSED(fallBackToKatePart)
+  return KTextEditor::createDefaultEditor();
 }
 
 // kate: space-indent on; indent-width 2; replace-tabs on;

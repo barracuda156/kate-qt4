@@ -80,15 +80,7 @@ private slots:
      */
     void slotAddSnippet();
 
-    /**
-     * Slot to get hot new stuff.
-     */
-    void slotGHNS();
 
-    /**
-     * Slot to put the selected snippet to GHNS
-     */
-    void slotSnippetToGHNS();
 
     /**
      * Changes the filter of the proxy.
@@ -113,8 +105,6 @@ private:
     KAction* m_addSnippetAction;
     KAction* m_removeSnippetAction;
     KAction* m_editSnippetAction;
-    KAction* m_getNewStuffAction;
-    KAction* m_putNewStuffAction;
 };
 
 #endif

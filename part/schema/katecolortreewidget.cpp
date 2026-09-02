@@ -34,6 +34,7 @@
 #include <QDebug>
 #include <QEvent>
 #include <QKeyEvent>
+#include <kiconloader.h>
 
 //BEGIN KateColorTreeItem
 class KateColorTreeItem : public QTreeWidgetItem

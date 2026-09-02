@@ -31,6 +31,7 @@
 
 #include <ktexteditor/editor.h>
 #include <ktexteditor/templateinterface2.h>
+#include <kglobal.h>
 
 SnippetStore* SnippetStore::m_self = 0;
 

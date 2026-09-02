@@ -1,76 +1,101 @@
-cmake_minimum_required(VERSION 2.8.9)
-# Kate project
-project (kate)
+# Kate on plain Qt 4 (no kdelibs) - see BUILDING-QT4.md and qt4compat/README.md
+cmake_minimum_required(VERSION 3.5)
+project(kate)
 
-# shared libs
-set (LIBRARY_TYPE SHARED)
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 
-# search packages used by KDE
-find_package(KDE4 4.8.0 REQUIRED)
-include (KDE4Defaults)
-include (MacroLibrary)
-include (CheckFunctionExists)
+include(CheckFunctionExists)
+include(KateQt4Macros)
 
-# activity feature for Kate/KWrite
-macro_optional_find_package(KActivities 6.1.0 NO_MODULE)
-macro_log_feature(KActivities_FOUND "KActivities" "Activities interface library" "https://projects.kde.org/projects/kde/kdelibs/kactivities" FALSE "6.1.0" "Required for Activities integration.")
+option(KATE_BUILD_KWRITE "Build the KWrite editor shell" ON)
+option(KATE_BUILD_KATE "Build the Kate MDI application (not ported yet)" OFF)
+option(KATE_BUILD_ADDONS "Build addons/plugins (not ported yet)" OFF)
+option(BUILD_TESTING "Build tests (not ported yet)" OFF)
 
-# no in source builds
-macro_ensure_out_of_source_build("kate requires an out of source build. Please create a separate build directory and run 'cmake path_to_kate [options]' there.")
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+endif()
+
+# C++11 keeps the old sources building with new GCCs (no 'register' errors)
+if(NOT CMAKE_VERSION VERSION_LESS 3.1)
+    if(NOT CMAKE_CXX_STANDARD)
+        set(CMAKE_CXX_STANDARD 11)
+    endif()
+    set(CMAKE_CXX_STANDARD_REQUIRED OFF)
+    set(CMAKE_CXX_EXTENSIONS ON)
+endif()
+
+# Qt 4.8 (vendored FindQt4.cmake in cmake/, CMake 4 dropped it)
+set(QT_USE_IMPORTED_TARGETS OFF)
+set(QT_MIN_VERSION 4.8.0)
+find_package(Qt4 4.8.0 REQUIRED QtCore QtGui QtXml QtScript QtNetwork)
+set(QT_USE_QTXML TRUE)
+set(QT_USE_QTSCRIPT TRUE)
+set(QT_USE_QTNETWORK TRUE)
+include(${QT_USE_FILE})
+
+find_package(ZLIB REQUIRED)
+find_package(BZip2)
+if(BZIP2_FOUND)
+    add_definitions(-DHAVE_BZIP2=1)
+    include_directories(${BZIP2_INCLUDE_DIR})
+endif()
+find_package(Perl)
+if(NOT PERL_FOUND)
+    message(WARNING "Perl not found: the generated PHP syntax highlighting files will be skipped")
+endif()
 
 # config.h
 if(NOT APPLE)
-  check_function_exists (fdatasync HAVE_FDATASYNC)
-  check_function_exists (ctermid HAVE_CTERMID)
-endif(NOT APPLE)
+    check_function_exists(fdatasync HAVE_FDATASYNC)
+    check_function_exists(ctermid HAVE_CTERMID)
+endif()
+configure_file(config.h.cmake ${CMAKE_BINARY_DIR}/config.h)
 
-configure_file (config.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/config.h)
-
-# enforce build of tests
-set (KDE4_BUILD_TESTS "ON" CACHE "BOOL" "Enable building of tests" FORCE)
-
-# KDE/QT definitions we want
-add_definitions (${QT_DEFINITIONS} ${KDE4_DEFINITIONS})
-add_definitions (-DQT_USE_FAST_CONCATENATION -DQT_USE_FAST_OPERATOR_PLUS -DKTEXTEDITOR_NO_DEPRECATED)
-
-# global include directories
-include_directories (${CMAKE_CURRENT_BINARY_DIR} ${KDE4_INCLUDES} ${KDE4_KIO_INCLUDES} ${KACTIVITIES_INCLUDE_DIRS})
-
-# allow to build own ktexteditor
-option(BUILD_KTEXTEDITOR "Build KTextEditor interfaces, instead of reusing the system version" OFF)
-if (BUILD_KTEXTEDITOR)
-  # use our own copies of some stuff
-  set (KDE4_KTEXTEDITOR_LIBS "ktexteditor")
-
-  # add more includes to let the local ktexteditor stuff be found
-  include_directories (BEFORE ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/includes)
-
-  # ktexteditor interfaces, copy from kdelibs/interfaces/ktexteditor
-  macro_optional_add_subdirectory (ktexteditor)
+# install layout
+if(APPLE)
+    set(KATE_INSTALL_BUNDLE_DIR "/Applications" CACHE PATH "Where .app bundles are installed")
+    # kate_install_data() targets: relative to the install prefix, inside the bundle
+    set(KATE_BUNDLE_RESOURCES_INSTALL_DIR "${KATE_INSTALL_BUNDLE_DIR}/KWrite.app/Contents/Resources")
 else()
-  # kdelibs 4.11 is required
-  if("${KDE_VERSION}" VERSION_LESS 4.10.60)
-    message(FATAL_ERROR "kdelibs version ${KDE_VERSION}, but 4.11 is required. Set the option BUILD_KTEXTEDITOR to ON to build anyway.")
-  endif()
-endif (BUILD_KTEXTEDITOR)
+    set(KATE_INSTALL_BUNDLE_DIR "" CACHE PATH "Unused on this platform")
+endif()
+set(KATE_DATA_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/share/kate-qt4")
+set(KATE_BIN_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/bin")
 
-# kate part
-macro_optional_add_subdirectory (part)
+# definitions shared by every target
+add_definitions(
+    -DQT_USE_FAST_CONCATENATION
+    -DQT_USE_FAST_OPERATOR_PLUS
+    -DKTEXTEDITOR_NO_DEPRECATED
+    -DKATE_INSTALL_DATADIR="${KATE_DATA_INSTALL_DIR}"
+    -DKATE_SOURCE_DATADIRS="${KATE_DATA_STAGING_DIR}"
+)
+if(NOT APPLE)
+    add_definitions(-D_LARGEFILE64_SOURCE)
+endif()
 
-# kate application
-macro_optional_add_subdirectory (kate)
+include_directories(
+    ${CMAKE_BINARY_DIR}
+    ${CMAKE_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/includes
+    ${CMAKE_SOURCE_DIR}/qt4compat/include
+    ${QT_INCLUDES}
+    ${ZLIB_INCLUDE_DIRS}
+)
 
-# kwrite
-macro_optional_add_subdirectory (kwrite)
-
-# addons, e.g. ktexteditor plugins, kate plugins, plasma applets, ...
-macro_optional_add_subdirectory (addons)
-
-# docs
-macro_optional_add_subdirectory (doc)
-
-# tests
-macro_optional_add_subdirectory (tests)
-
-# display features ;)
-macro_display_feature_log()
+add_subdirectory(qt4compat)
+add_subdirectory(ktexteditor)
+add_subdirectory(part)
+if(KATE_BUILD_KWRITE)
+    add_subdirectory(kwrite)
+endif()
+if(KATE_BUILD_KATE)
+    add_subdirectory(kate)
+endif()
+if(KATE_BUILD_ADDONS)
+    add_subdirectory(addons)
+endif()
+if(BUILD_TESTING)
+    add_subdirectory(tests)
+endif()

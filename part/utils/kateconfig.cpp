@@ -40,6 +40,7 @@
 
 #include <QtCore/QTextCodec>
 #include <QStringListModel>
+#include <kglobal.h>
 
 //BEGIN KateConfig
 KateConfig::KateConfig ()

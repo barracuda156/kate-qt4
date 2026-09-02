@@ -34,6 +34,8 @@
 
 #include <QtGui/QApplication>
 #include <QtCore/QFile>
+#include <kglobal.h>
+#include <kconfig.h>
 
 // use this to turn on over verbose debug output...
 #undef KSD_OVER_VERBOSE
