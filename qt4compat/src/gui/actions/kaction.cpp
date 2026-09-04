@@ -41,6 +41,9 @@ KAction::~KAction()
 
 void KAction::init()
 {
+    // macOS: never let Qt move an action into the application menu by its
+    // text; KStandardAction sets the Preferences/Quit/About roles explicitly
+    setMenuRole(QAction::NoRole);
     setProperty("isShortcutConfigurable", true);
     connect(this, SIGNAL(triggered(bool)), this, SLOT(slotTriggered()));
 }

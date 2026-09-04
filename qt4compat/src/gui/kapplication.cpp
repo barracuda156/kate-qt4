@@ -12,9 +12,27 @@
 
 static KApplication *s_kapp = 0;
 
+/* The layer's Qt resources (data/xmlgui.qrc: ui_standards.rc; data/icons.qrc:
+ * the icon theme) are compiled into the static library. A .qrc registers
+ * itself through a static initializer in its own object file, which the
+ * linker only pulls in when something references it - nothing did, so
+ * neither resource existed at run time: the standard menu layout was not
+ * merged (Kate's Settings menu had one entry) and icon lookups failed.
+ * Register them explicitly from here, code every application runs. */
+static void initQt4CompatResources()
+{
+    static bool done = false;
+    if (done)
+        return;
+    done = true;
+    Q_INIT_RESOURCE(xmlgui);
+    Q_INIT_RESOURCE(icons);
+}
+
 KApplication::KApplication(bool GUIenabled)
     : QApplication(KCmdLineArgs::qtArgc(), KCmdLineArgs::qtArgv(), GUIenabled)
 {
+    initQt4CompatResources();
     s_kapp = this;
     const KAboutData *about = KCmdLineArgs::aboutData();
     if (about) {

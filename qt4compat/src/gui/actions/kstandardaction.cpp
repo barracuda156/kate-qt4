@@ -156,6 +156,25 @@ KAction *create(StandardAction id, const QObject *recvr, const char *slot, QObje
 
     pAction->setObjectName(QString::fromLatin1(pInfo->psName));
 
+    // macOS moves actions into the application menu by their text unless
+    // told otherwise ("Configure Shortcuts..." would become "Preferences...");
+    // KAction defaults to NoRole, so say which standard actions really belong
+    // there - as kdelibs does
+    switch (id) {
+    case Preferences:
+        pAction->setMenuRole(QAction::PreferencesRole);
+        break;
+    case Quit:
+        pAction->setMenuRole(QAction::QuitRole);
+        break;
+    case AboutApp:
+        pAction->setMenuRole(QAction::AboutRole);
+        break;
+    default:
+        pAction->setMenuRole(QAction::NoRole);
+        break;
+    }
+
     if (recvr && slot) {
         if (id == OpenRecent)
             QObject::connect(pAction, SIGNAL(urlSelected(KUrl)), recvr, slot);
