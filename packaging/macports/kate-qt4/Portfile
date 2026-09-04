@@ -64,6 +64,13 @@ post-extract {
 patch.pre_args      -p1
 patchfiles          patch-part.diff patch-ktexteditor.diff patch-kwrite.diff patch-kate.diff patch-addons.diff patch-misc.diff
 
+# Perl and Python 3 run upstream's generators for the derived syntax
+# highlighting definitions (part/syntax/generators) at build time
+set python_branch   3.13
+depends_build-append \
+                    port:perl5 \
+                    port:python[string map {. {}} ${python_branch}]
+
 # pcre2 is the regular expression engine of syntax highlighting and search
 depends_lib-append  port:zlib \
                     port:bzip2 \
@@ -74,6 +81,8 @@ depends_lib-append  port:zlib \
 compiler.cxx_standard   2011
 
 configure.args-append \
+                    -DPERL_EXECUTABLE=${prefix}/bin/perl5 \
+                    -DPYTHON_EXECUTABLE=${prefix}/bin/python${python_branch} \
                     -DKATE_BUILD_KWRITE=ON \
                     -DKATE_BUILD_KATE=ON \
                     -DKATE_BUILD_ADDONS=ON \

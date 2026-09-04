@@ -42,6 +42,14 @@ if(BZIP2_FOUND)
     add_definitions(-DHAVE_BZIP2=1)
     include_directories(${BZIP2_INCLUDE_DIR})
 endif()
+# Perl and Python 3 run upstream's generators for the derived syntax
+# highlighting definitions (part/syntax/generators) at build time
+find_package(Perl REQUIRED)
+find_program(PYTHON_EXECUTABLE NAMES python3 python3.14 python3.13 python3.12 python3.11 python3.10 python3.9 python)
+if(NOT PYTHON_EXECUTABLE)
+    message(FATAL_ERROR "Python 3 not found; it generates the Jinja syntax highlighting variants (set PYTHON_EXECUTABLE)")
+endif()
+
 # pcre2 (16-bit) is the regex engine of syntax highlighting and search.
 # 10.43 added variable-length lookbehind, which a few upstream highlighting
 # definitions use (fish.xml); an older library only loses those rules.

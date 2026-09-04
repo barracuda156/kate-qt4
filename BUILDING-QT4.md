@@ -13,6 +13,9 @@ no kdeinit, no X11.
 * Qt 4.8.x with QtCore, QtGui, QtXml, QtScript, QtNetwork (QtScript drives
   the indenters and editor commands).
 * zlib; bzip2 optional (bzip2-compressed documents).
+* Perl and Python 3 (standard modules only): they run upstream's generators
+  for the derived syntax highlighting definitions (PHP/Twig/Jinja variants,
+  DoxygenLua, XSLT, JSONC) at build time, see `part/syntax/generators`.
 * pcre2 (the 16-bit library, `libpcre2-16`): the regular expression engine
   of syntax highlighting and search, the same engine upstream Kate uses
   through QRegularExpression, so the shipped highlighting definitions behave
@@ -79,12 +82,15 @@ job).
 
 `part/syntax/data/` carries the current upstream set from KDE's
 syntax-highlighting framework (the snapshot is named in its
-`CMakeLists.txt`), including the variants upstream generates at build time,
-generated once and committed. KatePart reads them with upstream's rules:
-per-rule word delimiters, `<include>` in keyword lists, pcre2 regexes.
+`CMakeLists.txt`); the variants upstream derives at build time are derived
+here the same way with upstream's scripts in `part/syntax/generators/`.
+KatePart reads them with upstream's rules: per-rule word delimiters,
+`<include>` in keyword lists, pcre2 regexes.
 `qt4compat/tools/validate-syntax.py` checks a new snapshot (well-formed XML,
-every regex compiles in pcre2 16-bit mode, cross references resolve) and
-needs `pcre2test`; on the Linux box it lives in `~/barracuda/deproot`.
+every regex compiles in pcre2 16-bit mode, cross references resolve); run
+`part/syntax/generators/generate-all.sh <dir>` first and validate both
+directories. It needs `pcre2test`; on the Linux box it lives in
+`~/barracuda/deproot`.
 User definitions go into `~/Library/Application Support/Kate/katepart/syntax/`
 (macOS) or `$XDG_DATA_HOME/kate-qt4/katepart/syntax/`.
 
