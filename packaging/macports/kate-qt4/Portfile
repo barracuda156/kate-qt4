@@ -10,7 +10,7 @@ PortGroup           legacysupport 1.1
 # the qt4compat layer; see BUILDING-QT4.md in the tree.
 name                kate-qt4
 version             4.14.3.qt4.0
-revision            6
+revision            7
 
 # Source tarball: the qt4-pure tree (kate KDE/4.14 head f17e4c99 plus the
 # qt4compat layer). Host it and point master_sites at it, or drop it into
@@ -18,9 +18,9 @@ revision            6
 master_sites        https://github.com/macos-powerpc/kate/releases/download/v${version}/
 distname            kate-qt4-${version}
 use_xz              yes
-checksums           rmd160  ff8b474448f7ba64ea611f536b7413bf2f060a82 \
-                    sha256  d37c365540325fc5f4f3b471603c856c7599c69b083938c423ceaf80d8fd2b4a \
-                    size    3904912
+checksums           rmd160  c62a6bd64ae0dfb328785c3bf8786d5a9bf5753a \
+                    sha256  0ced8efe7f6ef72c739c8a5f496fee5b88b70782938a913122602fcf235ecb02 \
+                    size    3906044
 
 # Alternative once the branch is pushed: fetch from git instead of the tarball
 #fetch.type          git
