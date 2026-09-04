@@ -31,7 +31,7 @@
 	    - Fixed detection of varaibles with names containing serval namespace delimiters (::)
 -->
 
-<language name="Tcl/Tk" version="9" kateversion="5.79" section="Scripts" extensions="*.tcl;*.tk" mimetype="text/x-tcl" license="BSD">
+<language name="Tcl/Tk" version="10" kateversion="5.79" section="Scripts" extensions="*.tcl;*.tk;Portfile" mimetype="text/x-tcl" license="BSD">
   <highlighting>
     <list name="control-flow">
       <item>break</item>

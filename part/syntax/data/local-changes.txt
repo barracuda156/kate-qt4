@@ -1,0 +1,7 @@
+# Local edits to the upstream syntax highlighting definitions in this
+# directory (see CMakeLists.txt for the upstream snapshot). Re-apply these
+# after importing a new snapshot; each bumps the definition's version= so
+# Kate rebuilds its mode cache. Not installed (the install glob is *.xml).
+#
+# tcl.xml: added "Portfile" to extensions (a MacPorts Portfile is a Tcl
+#   script but has no extension, so it would open as plain text); version 9 -> 10.
