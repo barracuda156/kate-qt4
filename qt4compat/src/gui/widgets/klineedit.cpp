@@ -45,6 +45,7 @@ void KLineEdit::init()
     m_trapReturnKey = false;
     m_squeezedEnabled = false;
     m_clearButtonShown = false;
+    m_updatingClearButton = false;
     m_autoSuggest = false;
     m_userSelection = true;
     m_disableRestoreSelection = false;
@@ -216,24 +217,40 @@ QSize KLineEdit::clearButtonUsedSize() const
 
 void KLineEdit::updateClearButton()
 {
-    if (!m_clearButton)
+    if (!m_clearButton || m_updatingClearButton)
         return;
+    m_updatingClearButton = true;
+
     const bool visible = m_clearButtonShown && !text().isEmpty() && !isReadOnly();
     m_clearButton->setVisible(visible);
     const int frame = style()->pixelMetric(QStyle::PM_DefaultFrameWidth, 0, this);
-    const int padding = visible ? m_clearButton->sizeHint().width() + frame + 2 : 0;
-    if (layoutDirection() == Qt::LeftToRight)
-        setStyleSheet(QString::fromLatin1("QLineEdit { padding-right: %1px; }").arg(padding));
-    else
-        setStyleSheet(QString::fromLatin1("QLineEdit { padding-left: %1px; }").arg(padding));
+    const QSize sz = m_clearButton->sizeHint();
+
+    // Room for the button comes from the text margins, as in kdelibs. A style
+    // sheet is not an option: setStyleSheet() repolishes the widget, the
+    // StyleChange event that produces lands in event() and calls back here
+    // (Kate crashed at startup with an unbounded recursion through
+    // QStyleSheetStyle::repolish as soon as a line edit had a clear button).
+    const int reserved = visible ? sz.width() + frame + 2 : 0;
+    int left = 0, top = 0, right = 0, bottom = 0;
+    getTextMargins(&left, &top, &right, &bottom);
+    if (layoutDirection() == Qt::LeftToRight) {
+        if (right != reserved)
+            setTextMargins(left, top, reserved, bottom);
+    } else {
+        if (left != reserved)
+            setTextMargins(reserved, top, right, bottom);
+    }
+
     if (visible) {
-        const QSize sz = m_clearButton->sizeHint();
         const QRect r = rect();
         if (layoutDirection() == Qt::LeftToRight)
             m_clearButton->move(r.right() - frame - sz.width() - 1, (r.height() - sz.height()) / 2);
         else
             m_clearButton->move(r.left() + frame + 1, (r.height() - sz.height()) / 2);
     }
+
+    m_updatingClearButton = false;
 }
 
 void KLineEdit::slotClearButtonClicked()

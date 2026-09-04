@@ -120,6 +120,7 @@ private:
     bool m_trapReturnKey;
     bool m_squeezedEnabled;
     bool m_clearButtonShown;
+    bool m_updatingClearButton;
     bool m_autoSuggest;
     bool m_userSelection;
     bool m_disableRestoreSelection;
