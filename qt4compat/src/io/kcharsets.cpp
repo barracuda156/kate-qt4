@@ -736,7 +736,12 @@ QTextCodec *KCharsets::codecForNameOrNull( const QByteArray& n ) const
 {
     QTextCodec* codec = 0;
 
-    if (n.isEmpty()) {
+    // qt4compat: "System" is the name of Qt 4's iconv locale mapper. It used
+    // to leak out of KLocale::codecForEncoding() and got stored as an
+    // encoding name (Kate's "Kate Document Defaults"/Encoding); read it as
+    // "the locale's encoding" so such configs heal on the next start and
+    // the name can never resolve to the mapper again.
+    if (n.isEmpty() || qstricmp(n.constData(), "System") == 0) {
         // No name, assume locale (KDE's, not Qt's)
         const QByteArray locale = "->locale<-";
         if ( d->codecForNameDict.contains( locale ) )
