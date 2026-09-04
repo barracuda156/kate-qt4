@@ -13,7 +13,8 @@
 #              replaced-files.txt (packaging/ itself is left out: it is not
 #              source). Unpacked over the extracted sources before patching.
 #   Nothing is deleted in the port; files this build no longer uses stay in
-#   the tree unused (make sure that is harmless when you delete something).
+#   the tree unused, and every such file must be listed with its reason in
+#   unused-upstream-files.txt (the script refuses unknown ones).
 #
 # Writes <outdir>/kate-qt4/{Portfile,files/}, <outdir>/distfiles/<overlay>,
 # <outdir>/upstream-changes.txt and <outdir>/overlay-contents.txt, updates the
@@ -78,6 +79,16 @@ is_replaced() {
 while read -r f; do
     if is_replaced "$f"; then echo "$f" >> "$TMP/replaced"; else echo "$f" >> "$TMP/patched"; fi
 done < "$TMP/modified"
+
+# every deleted upstream file must be known to be harmless when left behind
+unlisted=$(while read -r f; do
+    grep -q "^$f[[:space:]]" $HERE/unused-upstream-files.txt || echo "  $f"
+done < "$TMP/deleted")
+if [ -n "$unlisted" ]; then
+    echo "deleted upstream files not listed in $HERE/unused-upstream-files.txt (the port does not delete; make sure they are harmless, then list them):" >&2
+    echo "$unlisted" >&2
+    exit 1
+fi
 
 # overlay = added files (not packaging/) + replaced files
 { grep -v '^packaging/' "$TMP/added"; cat "$TMP/replaced"; } | sort > "$TMP/overlay"
