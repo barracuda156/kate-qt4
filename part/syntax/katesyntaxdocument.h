@@ -22,6 +22,7 @@
 
 #include <QtCore/QList>
 #include <QtCore/QStringList>
+#include <QtCore/QSet>
 #include <QtXml/QDomDocument>
 
 class KConfig;
@@ -79,6 +80,12 @@ class KateSyntaxDocument : public QDomDocument
      * @param force fore the update of the hl cache
      */
     explicit KateSyntaxDocument(KConfig *config, bool force = false);
+
+    /**
+     * A bare document without a mode list, for reading a second definition
+     * file while another one is being built (keyword list includes).
+     */
+    KateSyntaxDocument();
 
     /**
      * Desctructor
@@ -139,6 +146,9 @@ class KateSyntaxDocument : public QDomDocument
      */
     QStringList& finddata(const QString& mainGroup,const QString& type,bool clearList=true);
 
+    /** one <include> of a keyword list, see finddata() */
+    QStringList includedKeywords(const QString& mainGroup, const QString& listName, const QString& include);
+
   private:
     /**
      * Generate the list of hl modes, store them in myModeList
@@ -166,6 +176,9 @@ class KateSyntaxDocument : public QDomDocument
      * last found data out of the xml
      */
     QStringList m_data;
+
+    /** keyword lists being resolved through <include>, "file|list" / "Language|list" */
+    QSet<QString> m_includeGuard;
     
     /**
      * global config, deleted by hlmanager...

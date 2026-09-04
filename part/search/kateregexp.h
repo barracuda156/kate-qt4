@@ -22,42 +22,53 @@
 #ifndef _KATE_REGEXP_H_
 #define _KATE_REGEXP_H_
 
-#include <QtCore/QRegExp>
+#include "katepcre.h"
 
+/**
+ * Regular expression for the document search (search bar, vi mode,
+ * KTextEditor::SearchInterface, the search plugin), on KatePcre. Beyond
+ * plain matching it knows whether a pattern can match across lines and
+ * repairs "." and "\\s" so they do not, as KateRegExpSearch needs.
+ */
 class KateRegExp
 {
   public:
-    explicit KateRegExp(const QString &pattern, Qt::CaseSensitivity cs = Qt::CaseSensitive,
-        QRegExp::PatternSyntax syntax = QRegExp::RegExp2);
+    explicit KateRegExp(const QString &pattern, Qt::CaseSensitivity cs = Qt::CaseSensitive);
 
-    bool isEmpty() const { return m_regExp.isEmpty(); }
+    bool isEmpty() const { return m_pattern.isEmpty(); }
     bool isValid() const { return m_regExp.isValid(); }
-    QString pattern() const { return m_regExp.pattern(); }
-    int numCaptures() const { return m_regExp.numCaptures(); }
+    QString errorString() const { return m_regExp.errorString(); }
+    QString pattern() const { return m_pattern; }
+    int numCaptures() const { return m_regExp.captureCount(); }
     int pos(int nth = 0) const { return m_regExp.pos(nth); }
     QString cap(int nth = 0) const { return m_regExp.cap(nth); }
+    QStringList capturedTexts() const { return m_regExp.capturedTexts(); }
     int matchedLength() const { return m_regExp.matchedLength(); }
 
+    /**
+     * First match in str[offset, end). "^" only matches at 0 (at line
+     * starts too for a multi-line pattern, see repairPattern()).
+     */
     int indexIn(const QString &str, int offset, int end) const;
 
     /**
-     * This function is a replacement for QRegExp.lastIndexIn that
-     * returns the last match that would have been found when
-     * searching forwards, which QRegExp.lastIndexIn does not.
-     * We need this behavior to allow the user to jump back to
-     * the last match.
+     * The last match that a forward search from offset would find. We need
+     * this behavior to allow the user to jump back to the last match.
      *
      * \param str        Text to search in
-     * \param offset     Offset (-1 starts from end, -2 from one before the end)
+     * \param offset     Start of the search
+     * \param end        End of the searched text
      * \return           Index of match or -1 if no match is found
      */
     int lastIndexIn(const QString &str, int offset, int end) const;
 
     /**
      * Repairs a regular Expression pattern.
-     * This is a workaround to make "." and "\s" not match
-     * newlines, which currently is the unconfigurable
-     * default in QRegExp.
+     * This is a workaround to make "." and "\\s" not match
+     * newlines, which is the default in a Perl regular expression.
+     * A pattern that still matches across lines afterwards is
+     * recompiled in multi-line mode, so "^" and "$" match at every
+     * line boundary of the joined text it is run on.
      *
      * \param stillMultiLine  Multi-line after reparation flag
      * \return                Number of replacements done
@@ -73,7 +84,12 @@ class KateRegExp
     bool isMultiLine() const;
 
   private:
-    QRegExp m_regExp;
+    void compile();
+
+    QString m_pattern;
+    Qt::CaseSensitivity m_caseSensitivity;
+    bool m_multiLine;
+    KatePcre m_regExp;
 };
 
 #endif // KATEREGEXP_H

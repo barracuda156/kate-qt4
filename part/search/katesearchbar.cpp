@@ -704,7 +704,7 @@ bool KateSearchBar::isPatternValid() const {
         return false;
 
     return searchOptions().testFlag(Search::WholeWords) ? searchPattern().trimmed() == searchPattern() :
-           searchOptions().testFlag(Search::Regex)      ? QRegExp(searchPattern()).isValid() :
+           searchOptions().testFlag(Search::Regex)      ? KateRegExp(searchPattern()).isValid() :
                                                           true;
 }
 

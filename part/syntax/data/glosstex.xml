@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="GlossTex" version="0.01" kateversion="2.1" extensions="*.gdf" section="Markup" mimetype="text/x-gdf" casesensitive="1" author="Thomas Braun(braun@physik.fu-berlin.de)" license="LGPL">
+<!DOCTYPE language>
+<language name="GlossTex" version="4" kateversion="6.22" extensions="*.gdf" section="Markup" mimetype="text/x-gdf" casesensitive="1" author="Thomas Braun(braun@physik.fu-berlin.de)" license="LGPL">
   <highlighting>
     <contexts>
       <context name="Comment" attribute="Comment" lineEndContext="#stay">
@@ -30,11 +30,10 @@
     <itemDatas>
       <itemData name="Normal Text" defStyleNum="dsNormal"/>
       <itemData name="Comment" defStyleNum="dsComment"/>
-      <itemData name="Entry" defStyleNum="dsKeyword" color="#0000ff"/>
+      <itemData name="Entry" defStyleNum="dsVariable"/>
       <itemData name="Label" defStyleNum="dsDataType"/>
       <itemData name="Abbrev" defStyleNum="dsOthers"/>
       <itemData name="Full" defStyleNum="dsString"/>
-      <itemData name="Text" defStyleNum="dsChar"/>
     </itemDatas>
   </highlighting>
   <general>

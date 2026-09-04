@@ -21,10 +21,22 @@
 
 #include "kateregexp.h"
 
-KateRegExp::KateRegExp(const QString &pattern, Qt::CaseSensitivity cs,
-    QRegExp::PatternSyntax syntax)
-  : m_regExp(pattern, cs, syntax)
+KateRegExp::KateRegExp(const QString &pattern, Qt::CaseSensitivity cs)
+  : m_pattern(pattern)
+  , m_caseSensitivity(cs)
+  , m_multiLine(false)
 {
+  compile();
+}
+
+void KateRegExp::compile()
+{
+  KatePcre::Options options = KatePcre::NoOptions;
+  if (m_caseSensitivity == Qt::CaseInsensitive)
+    options |= KatePcre::CaseInsensitive;
+  if (m_multiLine)
+    options |= KatePcre::MultiLine;
+  m_regExp.setPattern(m_pattern, options);
 }
 
 // these things can besides '.' and '\s' make apptern multi-line:
@@ -196,8 +208,11 @@ int KateRegExp::repairPattern(bool & stillMultiLine)
     }
   }
 
-  // Overwrite with repaired pattern
-  m_regExp.setPattern(output);
+  // Overwrite with repaired pattern; a pattern that still spans lines runs
+  // on the joined text and wants "^"/"$" at every line boundary
+  m_pattern = output;
+  m_multiLine = stillMultiLine;
+  compile();
   return replaceCount;
 }
 
@@ -307,21 +322,12 @@ bool KateRegExp::isMultiLine() const
 
 int KateRegExp::indexIn(const QString &str, int start, int end) const
 {
-  return m_regExp.indexIn(str.left(end), start, QRegExp::CaretAtZero);
+  return m_regExp.indexIn(str, start, end);
 }
-
-
 
 int KateRegExp::lastIndexIn(const QString &str, int start, int end) const
 {
-  const int index = m_regExp.lastIndexIn(str.mid(start, end-start), -1, QRegExp::CaretAtZero);
-
-  if (index == -1)
-    return -1;
-
-  const int index2 = m_regExp.indexIn(str.left(end), start+index, QRegExp::CaretAtZero);
-
-  return index2;
+  return m_regExp.lastIndexIn(str, start, end);
 }
 
 // kate: space-indent on; indent-width 2; replace-tabs on;

@@ -49,6 +49,7 @@ KateHlItem::KateHlItem(int attribute, KateHlContextModification context,signed c
     column (-1),
     alwaysStartEnable (true),
     customStartEnable (false),
+    hasRuleDeliminators(false),
     haveCache(false),
     cachingHandled(false)
 {
@@ -197,30 +198,24 @@ KateHlItem *KateHlStringDetect::clone(const QStringList *args)
 
 //BEGIN KateHlWordDetect
 
-KateHlWordDetect::KateHlWordDetect(int attribute, KateHlContextModification context, signed char regionId, signed char regionId2, const QString& s, bool inSensitive)
+KateHlWordDetect::KateHlWordDetect(int attribute, KateHlContextModification context, signed char regionId, signed char regionId2, const QString& s, bool inSensitive, const QString &delims)
   : KateHlStringDetect(attribute, context, regionId, regionId2, s, inSensitive)
+  , m_deliminators(delims)
 {
-}
-
-inline bool isWordCharacter(const QChar& c)
-{
-  // The Qt docs say for word characters:
-  //      \w  - Matches a word character (QChar::isLetterOrNumber(), QChar::isMark(), or '_').
-  // see also: http://doc.trolltech.com/qregexp.html
-  return c.isLetterOrNumber() || c.isMark() || c.unicode() == '_';
 }
 
 int KateHlWordDetect::checkHgl(const QString& text, int offset, int len)
 {
-  //NOTE: word boundary means: any non-word character.
+  //NOTE: word boundary means: a word delimiter of the definition (or of
+  //      this rule), or the line boundary - the upstream semantics.
 
-  // make sure there is no letter or number before the word starts
-  if (offset > 0 && isWordCharacter(text.at(offset - 1))) {
+  // make sure the word does not continue a word
+  if (offset > 0 && !m_deliminators.contains(text.at(offset - 1))) {
     return 0;
   }
   offset = KateHlStringDetect::checkHgl(text, offset, len);
-  // make sure there is no letter or number after the word ends
-  if (offset && offset < text.length() && isWordCharacter(text.at(offset))) {
+  // make sure the word ends at a delimiter
+  if (offset && offset < text.length() && !m_deliminators.contains(text.at(offset))) {
     return 0;
   }
   return offset;
@@ -235,7 +230,7 @@ KateHlItem* KateHlWordDetect::clone(const QStringList* args)
   if (newstr == str)
     return this;
 
-  KateHlWordDetect *ret = new KateHlWordDetect(attr, ctx, region, region2, newstr, _inSensitive);
+  KateHlWordDetect *ret = new KateHlWordDetect(attr, ctx, region, region2, newstr, _inSensitive, m_deliminators);
   ret->dynamicChild = true;
   return ret;
 }
@@ -365,6 +360,7 @@ KateHlInt::KateHlInt(int attribute, KateHlContextModification context, signed ch
   : KateHlItem(attribute,context,regionId,regionId2)
 {
   alwaysStartEnable = false;
+  customStartEnable = true; // number must start at a word boundary of the definition
 }
 
 int KateHlInt::checkHgl(const QString& text, int offset, int len)
@@ -400,6 +396,7 @@ KateHlFloat::KateHlFloat(int attribute, KateHlContextModification context, signe
   : KateHlItem(attribute,context, regionId,regionId2)
 {
   alwaysStartEnable = false;
+  customStartEnable = true; // number must start at a word boundary of the definition
 }
 
 int KateHlFloat::checkHgl(const QString& text, int offset, int len)
@@ -496,6 +493,7 @@ KateHlCOct::KateHlCOct(int attribute, KateHlContextModification context, signed 
   : KateHlItem(attribute,context,regionId,regionId2)
 {
   alwaysStartEnable = false;
+  customStartEnable = true; // number must start at a word boundary of the definition
 }
 
 int KateHlCOct::checkHgl(const QString& text, int offset, int len)
@@ -531,6 +529,7 @@ KateHlCHex::KateHlCHex(int attribute, KateHlContextModification context,signed c
   : KateHlItem(attribute,context,regionId,regionId2)
 {
   alwaysStartEnable = false;
+  customStartEnable = true; // number must start at a word boundary of the definition
 }
 
 int KateHlCHex::checkHgl(const QString& text, int offset, int len)
@@ -565,6 +564,7 @@ KateHlCFloat::KateHlCFloat(int attribute, KateHlContextModification context, sig
   : KateHlFloat(attribute,context,regionId,regionId2)
 {
   alwaysStartEnable = false;
+  customStartEnable = true; // number must start at a word boundary of the definition
 }
 
 int KateHlCFloat::checkIntHgl(const QString& text, int offset, int len)
@@ -629,10 +629,13 @@ KateHlRegExpr::KateHlRegExpr( int attribute, KateHlContextModification context, 
   , _insensitive(insensitive)
   , _minimal(minimal)
   , _lastOffset(-2) // -2 is start value, -1 is "not found at all"
-  , Expr (regexp, _insensitive ? Qt::CaseInsensitive : Qt::CaseSensitive)
+  , Expr (regexp, (_insensitive ? KatePcre::CaseInsensitive : KatePcre::NoOptions)
+                | (_minimal ? KatePcre::Minimal : KatePcre::NoOptions))
 {
-  // minimal or not ;)
-  Expr.setMinimal(_minimal);
+  // an invalid pattern never matches; tell the definition's author once
+  if (!Expr.isValid())
+    kWarning(13010) << "invalid regular expression in highlighting rule:" << regexp
+                    << "-" << Expr.errorString() << "at" << Expr.errorOffset();
 }
 
 int KateHlRegExpr::checkHgl(const QString& text, int offset, int /*len*/)
@@ -653,7 +656,7 @@ int KateHlRegExpr::checkHgl(const QString& text, int offset, int /*len*/)
   }
 
   haveCache = true;
-  _lastOffset = Expr.indexIn( text, offset, QRegExp::CaretAtOffset );
+  _lastOffset = Expr.isValid() ? Expr.indexIn( text, offset ) : -1;
 
   if (_lastOffset == -1) return 0;
 
@@ -679,7 +682,7 @@ KateHlItem *KateHlRegExpr::clone(const QStringList *args)
 
   for (QStringList::Iterator it = escArgs.begin(); it != escArgs.end(); ++it)
   {
-    (*it).replace(QRegExp("(\\W)"), "\\\\1");
+    *it = KatePcre::escape(*it);
   }
 
   dynamicSubstitute(regexp, &escArgs);

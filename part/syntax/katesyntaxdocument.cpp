@@ -18,6 +18,7 @@
 */
 
 #include "katesyntaxdocument.h"
+#include "katesyntaxmanager.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -46,6 +47,12 @@ KateSyntaxDocument::KateSyntaxDocument(KConfig *config, bool force)
 {
   // Let's build the Mode List (katesyntaxhighlightingrc)
   setupModeList(force);
+}
+
+KateSyntaxDocument::KateSyntaxDocument()
+  : QDomDocument()
+  , m_config (0)
+{
 }
 
 KateSyntaxDocument::~KateSyntaxDocument()
@@ -292,6 +299,56 @@ KateSyntaxContextData* KateSyntaxDocument::getGroupInfo(const QString& mainGroup
 /**
  * Returns a list with all the keywords inside the list type
  */
+/**
+ * Resolves one <include> of a keyword list: "name" is another list of the
+ * same file, "name##Language" a list of another definition (loaded into a
+ * temporary document). Cycles are cut with the guard set.
+ */
+QStringList KateSyntaxDocument::includedKeywords(const QString& mainGroup, const QString& listName, const QString& include)
+{
+  const int sep = include.indexOf(QLatin1String("##"));
+  const QString otherList = sep >= 0 ? include.left(sep) : include;
+  const QString otherLanguage = sep >= 0 ? include.mid(sep + 2) : QString();
+
+  const QString guardKey = (otherLanguage.isEmpty() ? currentFile : otherLanguage) + QLatin1Char('|') + otherList;
+  if (m_includeGuard.contains(guardKey))
+  {
+    kWarning(13010) << "circular <include> of keyword list" << include << "in" << currentFile;
+    return QStringList();
+  }
+  m_includeGuard.insert(guardKey);
+
+  QStringList result;
+  if (otherLanguage.isEmpty())
+  {
+    // same file: finddata() shares m_data, so collect through a copy
+    const QStringList saved = m_data;
+    finddata(mainGroup, otherList, true);
+    result = m_data;
+    m_data = saved;
+  }
+  else
+  {
+    const QString identifier = KateHlManager::self()->identifierForName(otherLanguage);
+    if (identifier.isEmpty())
+    {
+      kWarning(13010) << "keyword list" << listName << "in" << currentFile
+                      << "includes" << include << "but there is no such language";
+    }
+    else
+    {
+      KateSyntaxDocument other;
+      other.m_includeGuard = m_includeGuard;
+      if (other.setIdentifier(identifier))
+        result = other.finddata(mainGroup, otherList, true);
+      m_includeGuard = other.m_includeGuard;
+    }
+  }
+
+  m_includeGuard.remove(guardKey);
+  return result;
+}
+
 QStringList& KateSyntaxDocument::finddata(const QString& mainGroup, const QString& type, bool clearList)
 {
 #ifdef KSD_OVER_VERBOSE
@@ -322,11 +379,23 @@ QStringList& KateSyntaxDocument::finddata(const QString& mainGroup, const QStrin
           
           QDomNodeList childlist = nodelist1.item(l).toElement().childNodes();
 
+          // <include>name</include> / <include>name##Language</include>
+          // pull another list in (upstream extension); resolved below so
+          // the items of this list come first
+          QStringList includes;
+
           for (int i=0; i<childlist.count(); i++)
           {
-            QString element = childlist.item(i).toElement().text().trimmed();
+            const QDomElement child = childlist.item(i).toElement();
+            QString element = child.text().trimmed();
             if (element.isEmpty())
               continue;
+
+            if (child.tagName() == QLatin1String("include"))
+            {
+              includes << element;
+              continue;
+            }
 
 #ifdef KSD_OVER_VERBOSE
             if (i<6)
@@ -341,6 +410,9 @@ QStringList& KateSyntaxDocument::finddata(const QString& mainGroup, const QStrin
 
             m_data += element;
           }
+
+          foreach (const QString &include, includes)
+            m_data += includedKeywords(mainGroup, type, include);
 
           break;
         }

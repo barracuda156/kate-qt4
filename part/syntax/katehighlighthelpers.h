@@ -22,8 +22,8 @@
 #define __KATE_HIGHLIGHTHELPERS_H__
 
 #include "katehighlight.h"
+#include "katepcre.h"
 
-#include <QRegExp>
 
 class KateHlItem
 {
@@ -62,6 +62,15 @@ class KateHlItem
     // saves function calls
     bool alwaysStartEnable;
     bool customStartEnable;
+
+    /**
+     * Word delimiters of this rule when it carries its own
+     * weakDeliminator/additionalDeliminator attributes (upstream extension
+     * used by ~150 definitions); otherwise the definition's set applies.
+     * Only meaningful when customStartEnable is set.
+     */
+    bool hasRuleDeliminators;
+    QString ruleDeliminators;
 
     // set to true when you cached something
     bool haveCache;
@@ -163,10 +172,18 @@ class KateHlStringDetect : public KateHlItem
 class KateHlWordDetect : public KateHlStringDetect
 {
   public:
-    KateHlWordDetect(int attribute, KateHlContextModification context, signed char regionId, signed char regionId2, const QString &, bool inSensitive = false);
+    /**
+     * @param delims word delimiters: the string only matches when the
+     *               characters before and after it are delimiters (or the
+     *               line boundary), as in upstream's WordDetect
+     */
+    KateHlWordDetect(int attribute, KateHlContextModification context, signed char regionId, signed char regionId2, const QString &, bool inSensitive, const QString &delims);
 
     virtual int checkHgl(const QString& text, int offset, int len);
     virtual KateHlItem *clone(const QStringList *args);
+
+  private:
+    QString m_deliminators;
 };
 
 class KateHlRangeDetect : public KateHlItem
@@ -287,9 +304,9 @@ class KateHlRegExpr : public KateHlItem
     KateHlRegExpr(int attribute, KateHlContextModification context,signed char regionId,signed char regionId2 ,const QString &expr, bool insensitive, bool minimal);
 
     virtual int checkHgl(const QString& text, int offset, int len);
-    
+
     virtual void capturedTexts (QStringList &);
-    
+
     virtual KateHlItem *clone(const QStringList *args);
 
   private:
@@ -297,14 +314,13 @@ class KateHlRegExpr : public KateHlItem
     QString _regexp;
     bool _insensitive;
     bool _minimal;
-
-    // optimization stuff below
-    /// index of the last match
     int _lastOffset;
-    /// length of the last match
     int _lastOffsetLength;
-    
-    QRegExp Expr;
+    /**
+     * pcre2, as upstream's QRegularExpression: "^" only matches at column 0,
+     * \w and friends are Unicode aware, "minimal" makes quantifiers lazy.
+     */
+    KatePcre Expr;
 };
 
 class KateHlDetectSpaces : public KateHlItem

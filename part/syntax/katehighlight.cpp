@@ -401,14 +401,23 @@ void KateHighlighting::doHighlight ( const Kate::TextLineData *_prevLine,
         {
           if (item->customStartEnable)
           {
-              if ( oldContext != context ) {
-                oldContext = context;
-                additionalData = m_additionalData[oldContext->hlId];
+              if (item->hasRuleDeliminators)
+              {
+                // the rule's own delimiters (not cached: differs per rule)
+                if (!item->ruleDeliminators.contains(lastChar))
+                  continue;
               }
-              if (customStartEnableDetermined || additionalData->deliminator.contains(lastChar))
-                customStartEnableDetermined = true;
               else
-                continue;
+              {
+                if ( oldContext != context ) {
+                  oldContext = context;
+                  additionalData = m_additionalData[oldContext->hlId];
+                }
+                if (customStartEnableDetermined || additionalData->deliminator.contains(lastChar))
+                  customStartEnableDetermined = true;
+                else
+                  continue;
+              }
           }
           else
           {
@@ -1021,6 +1030,22 @@ KateHlItem *KateHighlighting::createKateHlItem(KateSyntaxContextData *data,
   if (!colStr.isEmpty())
     column = colStr.toInt();
 
+  // word delimiters for keyword, WordDetect, Int, Float, HlCHex, HlCOct: the
+  // definition's set, which a rule may extend (additionalDeliminator) or
+  // shrink (weakDeliminator) for itself - an upstream extension
+  QString deliminators = m_additionalData[ buildIdentifier ]->deliminator;
+  const QString ruleWeak = KateHlManager::self()->syntax->groupItemData(data,QString("weakDeliminator"));
+  const QString ruleAdditional = KateHlManager::self()->syntax->groupItemData(data,QString("additionalDeliminator"));
+  const bool ruleDeliminators = !ruleWeak.isEmpty() || !ruleAdditional.isEmpty();
+  if (ruleDeliminators)
+  {
+    for (int i = 0; i < ruleAdditional.length(); ++i)
+      if (!deliminators.contains(ruleAdditional.at(i)))
+        deliminators.append(ruleAdditional.at(i));
+    for (int i = 0; i < ruleWeak.length(); ++i)
+      deliminators.remove(ruleWeak.at(i));
+  }
+
   // Create the item corresponding to its type and set its parameters
   KateHlItem *tmpItem;
 
@@ -1028,7 +1053,7 @@ KateHlItem *KateHighlighting::createKateHlItem(KateSyntaxContextData *data,
   {
     bool keywordInsensitive = insensitive_str.isEmpty() ? !casesensitive : insensitive;
     KateHlKeyword *keyword=new KateHlKeyword(attr,context,regionId,regionId2,keywordInsensitive,
-                                             m_additionalData[ buildIdentifier ]->deliminator);
+                                             deliminators);
 
     //Get the entries for the keyword lookup list
     keyword->addList(KateHlManager::self()->syntax->finddata("highlighting",stringdata));
@@ -1041,7 +1066,7 @@ KateHlItem *KateHighlighting::createKateHlItem(KateSyntaxContextData *data,
   else if (dataname=="RangeDetect") tmpItem=(new KateHlRangeDetect(attr,context,regionId,regionId2, chr, chr1));
   else if (dataname=="LineContinue") tmpItem=(new KateHlLineContinue(attr, context, regionId, regionId2, chr));
   else if (dataname=="StringDetect") tmpItem=(new KateHlStringDetect(attr,context,regionId,regionId2,stringdata,insensitive));
-  else if (dataname=="WordDetect") tmpItem=(new KateHlWordDetect(attr,context,regionId,regionId2,stringdata,insensitive));
+  else if (dataname=="WordDetect") tmpItem=(new KateHlWordDetect(attr,context,regionId,regionId2,stringdata,insensitive,deliminators));
   else if (dataname=="AnyChar") tmpItem=(new KateHlAnyChar(attr,context,regionId,regionId2,stringdata));
   else if (dataname=="RegExpr") tmpItem=(new KateHlRegExpr(attr,context,regionId,regionId2,stringdata, insensitive, minimal));
   else if (dataname=="HlCChar") tmpItem= ( new KateHlCChar(attr,context,regionId,regionId2));
@@ -1055,6 +1080,13 @@ KateHlItem *KateHighlighting::createKateHlItem(KateSyntaxContextData *data,
   {
     // oops, unknown type. Perhaps a spelling error in the xml file
     return 0;
+  }
+
+  // rules that start at a word boundary keep their own delimiter set
+  if (ruleDeliminators && tmpItem->customStartEnable)
+  {
+    tmpItem->hasRuleDeliminators = true;
+    tmpItem->ruleDeliminators = deliminators;
   }
 
   // set lookAhead & dynamic properties

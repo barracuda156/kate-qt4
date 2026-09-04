@@ -42,9 +42,12 @@ if(BZIP2_FOUND)
     add_definitions(-DHAVE_BZIP2=1)
     include_directories(${BZIP2_INCLUDE_DIR})
 endif()
-find_package(Perl)
-if(NOT PERL_FOUND)
-    message(WARNING "Perl not found: the generated PHP syntax highlighting files will be skipped")
+# pcre2 (16-bit) is the regex engine of syntax highlighting and search.
+# 10.43 added variable-length lookbehind, which a few upstream highlighting
+# definitions use (fish.xml); an older library only loses those rules.
+find_package(PCRE2 REQUIRED)
+if(PCRE2_VERSION AND PCRE2_VERSION VERSION_LESS 10.43)
+    message(WARNING "pcre2 ${PCRE2_VERSION} found; 10.43 or newer is recommended (variable-length lookbehind in some highlighting definitions)")
 endif()
 
 # config.h
@@ -94,6 +97,7 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/qt4compat/include
     ${QT_INCLUDES}
     ${ZLIB_INCLUDE_DIRS}
+    ${PCRE2_INCLUDE_DIRS}
 )
 
 add_subdirectory(qt4compat)

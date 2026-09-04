@@ -1,78 +1,67 @@
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="Crack" version="1.1" kateversion="2.3" section="Sources" extensions="*.crk" mimetype="">
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language>
+<language name="Crack" version="10" kateversion="5.0" section="Sources" extensions="*.crk" mimetype="">
   <highlighting>
     <list name="keywords">
-      <item> break</item>
-      <item> catch</item>
-      <item> class</item>
-      <item> continue</item>
-      <item> else</item>
-      <item> false</item>
-      <item> for</item>
-      <item> if</item>
-      <item> in</item>
-      <item> is</item>
-      <item> null</item>
-      <item> oper</item>
-      <item> return</item>
-      <item> this</item>
-      <item> true</item>
-      <item> try</item>
-      <item> typeof</item>
-      <item> while</item>
+      <item>break</item>
+      <item>catch</item>
+      <item>class</item>
+      <item>continue</item>
+      <item>else</item>
+      <item>false</item>
+      <item>for</item>
+      <item>if</item>
+      <item>in</item>
+      <item>is</item>
+      <item>null</item>
+      <item>oper</item>
+      <item>return</item>
+      <item>this</item>
+      <item>true</item>
+      <item>try</item>
+      <item>typeof</item>
+      <item>while</item>
     </list>
     <list name="types">
-      <item> bool</item>
-      <item> byte</item>
-      <item> int16</item>
-      <item> int32</item>
-      <item> int64</item>
-      <item> uint16</item>
-      <item> uint32</item>
-      <item> uint64</item>
-      <item> float32</item>
-      <item> float64</item>
-      <item> int</item>
-      <item> uint</item>
-      <item> intz</item>
-      <item> uintz</item>
-      <item> float</item>
-      <item> void</item>
+      <item>bool</item>
+      <item>byte</item>
+      <item>int16</item>
+      <item>int32</item>
+      <item>int64</item>
+      <item>uint16</item>
+      <item>uint32</item>
+      <item>uint64</item>
+      <item>float32</item>
+      <item>float64</item>
+      <item>int</item>
+      <item>uint</item>
+      <item>intz</item>
+      <item>uintz</item>
+      <item>float</item>
+      <item>void</item>
     </list>
     <contexts>
       <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
         <keyword attribute="Keyword" context="#stay" String="keywords"/>
-        <StringDetect attribute="Keyword" context="Package" String="import" />
+        <WordDetect attribute="Keyword" context="Package" String="import" />
         <keyword attribute="Data Type" context="#stay" String="types" />
-        <Float attribute="Float" context="#stay">
-          <AnyChar String="fF" attribute="Float" context="#stay"/>
-        </Float>
+        <Float attribute="Float" context="#stay"/>
         <HlCOct attribute="Octal" context="#stay"/>
         <HlCHex attribute="Hex" context="#stay"/>
-        <Int attribute="Decimal" context="#stay" >
-          <StringDetect attribute="Decimal" context="#stay" String="ULL" insensitive="TRUE"/>
-          <StringDetect attribute="Decimal" context="#stay" String="LUL" insensitive="TRUE"/>
-          <StringDetect attribute="Decimal" context="#stay" String="LLU" insensitive="TRUE"/>
-          <StringDetect attribute="Decimal" context="#stay" String="UL" insensitive="TRUE"/>
-          <StringDetect attribute="Decimal" context="#stay" String="LU" insensitive="TRUE"/>
-          <StringDetect attribute="Decimal" context="#stay" String="LL" insensitive="TRUE"/>
-          <StringDetect attribute="Decimal" context="#stay" String="U" insensitive="TRUE"/>
-          <StringDetect attribute="Decimal" context="#stay" String="L" insensitive="TRUE"/>
-        </Int>
+        <Int attribute="Decimal" context="#stay"/>
         <DetectChar attribute="String" context="Single quoted String" char="'"/>
         <DetectChar attribute="String" context="String" char="&quot;"/>
         <DetectChar attribute="String" context="Backtick String" char="`"/>
         <Detect2Chars attribute="Char" context="Char" char="b" char1="'" />
-        <IncludeRules context="##Doxygen" />
         <DetectChar attribute="Comment" context="Commentar 1" char="#" />
-        <Detect2Chars attribute="Comment" context="Commentar 2" char="/" char1="/"/>
-        <Detect2Chars attribute="Comment" context="Commentar 3" char="/" char1="*"/>
+        <Detect2Chars attribute="Comment" context="MatchComment" char="/" char1="/" lookAhead="true"/>
+        <Detect2Chars attribute="Comment" context="MatchComment" char="/" char1="*" lookAhead="true" />
         <DetectChar attribute="Symbol" context="#stay" char="{" beginRegion="block1"/>
         <DetectChar attribute="Symbol" context="#stay" char="}" endRegion="block1"/>
         <AnyChar attribute="Symbol" context="#stay" String=":!%&amp;()+,-/.*&lt;=&gt;?[]|~^&#59;"/>
         <RegExpr attribute="Function" context="#stay" String="\b[_\w][_\w\d]*(?=[\s]*[(])" />
-        <RegExpr attribute="Symbol" context="Member" String="[.]{1,1}" />
         <RegExpr attribute="Annotation" context="#stay" String="@\w+" />
+        <DetectIdentifier attribute="Normal Text"/>
       </context>
 
       <context attribute="String" lineEndContext="#pop" name="String">
@@ -121,14 +110,18 @@
         <RegExpr attribute="Package" String="[\w\\.]+" context="#pop"/>
       </context>
 
-      <context attribute="Normal Text" lineEndContext="#pop" name="Member" fallthrough="true" fallthroughContext="#pop">
-        <RegExpr attribute="Function" context="#pop" String="\b[_\w][_\w\d]*(?=[\s]*)" />
+      <context name="MatchComment" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+        <IncludeRules context="##Doxygen" />
+        <Detect2Chars attribute="Comment" context="#pop!Commentar 1" char="/" char1="/" />
+        <Detect2Chars attribute="Comment" context="#pop!Commentar 2" char="/" char1="*" beginRegion="Comment" />
       </context>
 
-      <context attribute="Comment" lineEndContext="#pop" name="Commentar 1"/>
-      <context attribute="Comment" lineEndContext="#pop" name="Commentar 2"/>
-      <context attribute="Comment" lineEndContext="#stay" name="Commentar 3">
-        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/"/>
+      <context attribute="Comment" lineEndContext="#pop" name="Commentar 1">
+        <IncludeRules context="##Comments" />
+      </context>
+      <context attribute="Comment" lineEndContext="#stay" name="Commentar 2">
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="BlockComment"/>
+        <IncludeRules context="##Comments" />
       </context>
     </contexts>
     <itemDatas>
@@ -142,17 +135,19 @@
       <itemData name="Char"         defStyleNum="dsChar"/>
       <itemData name="String"       defStyleNum="dsString"/>
       <itemData name="Comment"      defStyleNum="dsComment"/>
-      <itemData name="Symbol"       defStyleNum="dsNormal"/>
+      <itemData name="Symbol"       defStyleNum="dsOperator"/>
       <itemData name="Substitution" defStyleNum="dsOthers"/>
       <itemData name="Package"      defStyleNum="dsFunction"/>
       <itemData name="Function"     defStyleNum="dsFunction"/>
-      <itemData name="Annotation"   defStyleNum="dsKeyword"/>
+      <itemData name="Annotation"   defStyleNum="dsAttribute"/>
     </itemDatas>
   </highlighting>
   <general>
     <comments>
       <comment name="singleLine" start="#" />
+      <comment name="multiLine" start="/*" end="*/" region="BlockComment"/>
     </comments>
     <keywords casesensitive="1" />
   </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

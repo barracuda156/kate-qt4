@@ -1,47 +1,47 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 <!--
   Syntax definition for kdev-pg/kdev-pg-qt grammars.
 -->
-<language name="KDev-PG[-Qt] Grammar" version="0.24" kateversion="2.5" section="Sources" extensions="*.g" casesensitive="1" author="Milian Wolff (mail@milianw.de), Jonathan Schmidt-Dominé (devel@the-user.org)" license="">
+<language name="KDev-PG[-Qt] Grammar" version="4" kateversion="5.79" section="Sources" extensions="*.g" casesensitive="1" author="Milian Wolff (mail@milianw.de), Jonathan Schmidt-Dominé (devel@the-user.org)" license="">
   <highlighting>
     <list name="macros">
-      <item> ast_extra_members </item>
-      <item> export_macro </item>
-      <item> export_macro_header </item>
-      <item> namespace </item>
-      <item> parserclass </item>
-      <item> token </item>
-      <item> token_stream </item>
-      <item> parser_declaration_header </item>
-      <item> parser_bits_header </item>
-      <item> ast_header </item>
-      <item> ast_base </item>
-      <item> parser_base </item>
-      <item> bin </item>
-      <item> pre </item>
-      <item> post </item>
-      <item> tern </item>
-      <item> paren </item>
-      <item> left </item>
-      <item> right </item>
-      <item> &lt; </item>
-      <item> &gt; </item>
+      <item>ast_extra_members</item>
+      <item>export_macro</item>
+      <item>export_macro_header</item>
+      <item>namespace</item>
+      <item>parserclass</item>
+      <item>token</item>
+      <item>token_stream</item>
+      <item>parser_declaration_header</item>
+      <item>parser_bits_header</item>
+      <item>ast_header</item>
+      <item>ast_base</item>
+      <item>parser_base</item>
+      <item>bin</item>
+      <item>pre</item>
+      <item>post</item>
+      <item>tern</item>
+      <item>paren</item>
+      <item>left</item>
+      <item>right</item>
+      <item>&lt;</item>
+      <item>&gt;</item>
     </list>
     <list name="keywords">
-      <item> try/rollback </item>
-      <item> try/recover </item>
-      <item> catch </item>
+      <item>try/rollback</item>
+      <item>try/recover</item>
+      <item>catch</item>
     </list>
     <list name="access">
-      <item> public </item>
-      <item> protected </item>
-      <item> private </item>
+      <item>public</item>
+      <item>protected</item>
+      <item>private</item>
     </list>
     <list name="locations">
-      <item> declaration </item>
-      <item> destructor </item>
-      <item> constructor </item>
+      <item>declaration</item>
+      <item>destructor</item>
+      <item>constructor</item>
     </list>
     
     <contexts>
@@ -72,7 +72,7 @@
         <AnyChar attribute="Symbol" context="#stay" String=";[()]->|=*#@:?" />
       </context>
       <!-- keywords -->
-      <context name="Macros" attribute="Keyword" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop">
+      <context name="Macros" attribute="Keyword" lineEndContext="#stay" fallthroughContext="#pop">
         <keyword attribute="Keyword" context="#stay" String="macros" />
         <Detect2Chars lookAhead="true" context="#pop" attribute="Normal Text" char="[" char1=":" />
         <Detect2Chars context="#pop" attribute="Keyword" char=";" char1=";" />
@@ -83,9 +83,12 @@
         <DetectChar attribute="String" context="#pop" char="&quot;" />
       </context>
       <!-- comments -->
-      <context name="SingleLineComment" attribute="Comment" lineEndContext="#pop"/>
+      <context name="SingleLineComment" attribute="Comment" lineEndContext="#pop">
+        <DetectSpaces />
+        <IncludeRules context="##Comments" />
+      </context>
       <!-- code segments -->
-      <context name="CodeSegment" attribute="Code Segmentt" lineEndContext="#stay">
+      <context name="CodeSegment" attribute="Code Segment" lineEndContext="#stay">
         <Detect2Chars attribute="Code Segment" context="#pop" char=":" char1="]" endRegion="code" />
         <IncludeRules context="##C++" />
       </context>
@@ -142,4 +145,4 @@
     <keywords casesensitive="true" weakDeliminator="/" />
   </general>
 </language>
-
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

@@ -37,7 +37,6 @@
 #include "kateviglobal.h"
 #include "katevikeyparser.h"
 #include "kateschema.h"
-#include "katesyntaxdocument.h"
 #include "katemodeconfigpage.h"
 #include "kateview.h"
 #include "katepartpluginmanager.h"
@@ -66,7 +65,6 @@
 #include <kcombobox.h>
 #include <kconfig.h>
 #include <kdebug.h>
-#include <kdeversion.h>
 #include <kfontdialog.h>
 #include <kglobal.h>
 #include <kglobalsettings.h>
@@ -105,19 +103,11 @@
 #include <QtCore/QStringList>
 #include <QtGui/QTabWidget>
 #include <QtGui/QListWidget>
-#include <QtCore/QEventLoop>
-#include <QtNetwork/QNetworkAccessManager>
-#include <QtNetwork/QNetworkReply>
-#include <QtNetwork/QNetworkRequest>
 #include <QtCore/QTextCodec>
 #include <QtCore/QTextStream>
 #include <QtGui/QToolButton>
 #include <QtGui/QWhatsThis>
 #include <QtGui/QKeyEvent>
-#include <QtXml/QDomDocument>
-
-// trailing slash is important
-#define HLDOWNLOADPATH "http://kate.kde.org/syntax/"
 
 //END
 
@@ -1223,179 +1213,6 @@ void KatePartPluginConfigPage::defaults ()
     m_list->item(i)->setCheckState(katePluginList[i].isEnabledByDefault() ? Qt::Checked : Qt::Unchecked);
 }
 //END KatePartPluginConfigPage
-
-
-//BEGIN KateHlDownloadDialog
-KateHlDownloadDialog::KateHlDownloadDialog(QWidget *parent, const char *name, bool modal)
-  : KDialog( parent )
-{
-  setCaption( i18n("Highlight Download") );
-  setButtons( User1 | Close );
-  setButtonGuiItem( User1, KGuiItem(i18n("&Install")) );
-  setDefaultButton( User1 );
-  setObjectName( name );
-  setModal( modal );
-
-  KVBox* vbox = new KVBox(this);
-  setMainWidget(vbox);
-  vbox->setSpacing(-1);
-  new QLabel(i18n("Select the syntax highlighting files you want to update:"), vbox);
-  list = new QTreeWidget(vbox);
-  list->setColumnCount(4);
-  list->setHeaderLabels(QStringList() << "" << i18n("Name") << i18n("Installed") << i18n("Latest"));
-  list->setSelectionMode(QAbstractItemView::MultiSelection);
-  list->setAllColumnsShowFocus(true);
-  list->setRootIsDecorated(false);
-  list->setColumnWidth(0, 22);
-
-  new QLabel(i18n("<b>Note:</b> New versions are selected automatically."), vbox);
-  setButtonIcon(User1, KIcon("dialog-ok"));
-
-  // qt4compat: fetch the list with QtNetwork instead of KIO
-  m_nam = new QNetworkAccessManager(this);
-  QNetworkRequest request(QUrl(QString(HLDOWNLOADPATH)
-       + QString("update-")
-       + KateGlobal::katePartVersion()
-       + QString(".xml")));
-  request.setAttribute(QNetworkRequest::CacheLoadControlAttribute, QNetworkRequest::AlwaysNetwork);
-  m_reply = m_nam->get(request);
-  connect(m_reply, SIGNAL(finished()), this, SLOT(listDownloadFinished()));
-  resize(450, 400);
-  connect(this,SIGNAL(user1Clicked()),this,SLOT(slotUser1()));
-}
-
-KateHlDownloadDialog::~KateHlDownloadDialog(){}
-
-/// Split typical version string (\c major.minor.patch) into
-/// numeric components, convert 'em to \c unsigned and form a
-/// single value that can be compared w/ other versions
-/// using relation operators.
-/// \note It takes into account only first 3 numbers
-unsigned KateHlDownloadDialog::parseVersion(const QString& version_string)
-{
-  unsigned vn[3] = {0, 0, 0};
-  unsigned idx = 0;
-  foreach (const QString& n, version_string.split("."))
-  {
-    vn[idx++] = n.toUInt();
-    if (idx == sizeof(vn))
-      break;
-  }
-  return KDE_MAKE_VERSION(vn[0], vn[1], vn[2]);
-}
-
-void KateHlDownloadDialog::listDownloadFinished()
-{
-  QNetworkReply *reply = m_reply;
-  m_reply = 0;
-  if (!reply)
-    return;
-  reply->deleteLater();
-
-  if (reply->error() != QNetworkReply::NoError)
-  {
-    enableButton( User1, false );
-    KMessageBox::error(this,i18n("The list of highlightings could not be found on / retrieved from the server"));
-    return;
-  }
-
-  listData = QString::fromUtf8(reply->readAll());
-  kDebug(13000)<<QString("CurrentListData: ")<<listData;
-  kDebug(13000)<<QString("listData length: %1").arg(listData.length());
-  {
-    if (listData.length()>0)
-    {
-      QString installedVersion;
-      KateHlManager *hlm=KateHlManager::self();
-      QDomDocument doc;
-      doc.setContent(listData);
-      QDomElement DocElem=doc.documentElement();
-      QDomNode n=DocElem.firstChild();
-      KateHighlighting *hl = 0;
-
-      if (n.isNull()) kDebug(13000)<<"There is no usable childnode";
-      while (!n.isNull())
-      {
-        installedVersion="    --";
-
-        QDomElement e=n.toElement();
-        if (!e.isNull())
-        kDebug(13000)<<QString("NAME: ")<<e.tagName()<<QString(" - ")<<e.attribute("name");
-        n=n.nextSibling();
-
-        QString Name=e.attribute("name");
-
-        for (int i=0;i<hlm->highlights();i++)
-        {
-          hl=hlm->getHl(i);
-          if (hl && hl->name()==Name)
-          {
-            installedVersion="    "+hl->version();
-            break;
-          }
-          else hl = 0;
-        }
-
-        // autoselect entry if new or updated.
-        QTreeWidgetItem* entry = new QTreeWidgetItem(list);
-        entry->setText(0, "");
-        entry->setText(1, e.attribute("name"));
-        entry->setText(2, installedVersion);
-        entry->setText(3, e.attribute("version"));
-        entry->setText(4, e.attribute("url"));
-
-        bool is_fresh = false;
-        if (hl)
-        {
-          unsigned prev_version = parseVersion(hl->version());
-          unsigned next_version = parseVersion(e.attribute("version"));
-          is_fresh = prev_version < next_version;
-        }
-        else is_fresh = true;
-        if (is_fresh)
-        {
-          entry->treeWidget()->setItemSelected(entry, true);
-          entry->setIcon(0, SmallIcon(("get-hot-new-stuff")));
-        }
-      }
-      list->resizeColumnToContents(1);
-      list->sortItems(1, Qt::AscendingOrder);
-    }
-  }
-}
-
-void KateHlDownloadDialog::slotUser1()
-{
-  QString destdir=KGlobal::dirs()->saveLocation("data","katepart/syntax/");
-  foreach (QTreeWidgetItem *it, list->selectedItems())
-  {
-    KUrl src(it->text(4));
-    QString filename=src.fileName(KUrl::ObeyTrailingSlash);
-    QString dest = destdir+filename;
-
-    // qt4compat: synchronous download with QtNetwork
-    QNetworkReply *reply = m_nam->get(QNetworkRequest(QUrl(src)));
-    QEventLoop loop;
-    connect(reply, SIGNAL(finished()), &loop, SLOT(quit()));
-    loop.exec();
-    if (reply->error() == QNetworkReply::NoError)
-    {
-      QFile f(dest);
-      if (f.open(QIODevice::WriteOnly | QIODevice::Truncate))
-        f.write(reply->readAll());
-      else
-        KMessageBox::error(this, i18n("Could not write to %1", dest));
-    }
-    else
-      KMessageBox::error(this, i18n("Could not download %1", src.prettyUrl()));
-    reply->deleteLater();
-  }
-
-  // update Config !!
-  // this rewrites the cache....
-  KateSyntaxDocument doc (KateHlManager::self()->getKConfig(), true);
-}
-//END KateHlDownloadDialog
 
 //BEGIN KateGotoBar
 KateGotoBar::KateGotoBar(KTextEditor::View *view, QWidget *parent)

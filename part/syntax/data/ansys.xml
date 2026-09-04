@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="Ansys" version="1.2" kateversion="2.0" section="Scientific" extensions="*.ans" author="Giovanni Bacci (giovanni@castellodilari.it)" license="LGPL" >
+<!DOCTYPE language>
+<language name="Ansys" version="9" kateversion="5.0" section="Scientific" extensions="*.ans" author="Giovanni Bacci (giovanni@castellodilari.it)" license="LGPL" >
 <highlighting>
 	<list name="session_cmds">
 		<item>/BATCH</item>
@@ -370,7 +370,6 @@
 		<item>SPH5</item>
 		<item>SPHERE</item>
 		<item>TORUS</item>
-		<item>GSUM</item>
 		<item>K</item>
 		<item>KBETW</item>
 		<item>KCENTER</item>
@@ -389,7 +388,6 @@
 		<item>KSUM</item>
 		<item>KSYMM</item>
 		<item>KTRAN</item>
-		<item>SOURCE</item>
 		<item>HPTCREATE</item>
 		<item>HPTDELETE</item>
 		<item>BSPLIN</item>
@@ -440,10 +438,8 @@
 		<item>ASUB</item>
 		<item>ASUM</item>
 		<item>ATRAN</item>
-		<item>GSUM</item>
 		<item>SPLOT</item>
 		<item>EXTOPT</item>
-		<item>GSUM</item>
 		<item>V</item>
 		<item>VA</item>
 		<item>VDELE</item>
@@ -503,10 +499,8 @@
 		<item>CLRMSHLN</item>
 		<item>CPCYC</item>
 		<item>DESIZE</item>
-		<item>EORIENT</item>
 		<item>EREFINE</item>
 		<item>ESIZE</item>
-		<item>ESYS</item>
 		<item>FVMESH</item>
 		<item>GSGDATA</item>
 		<item>IMESH</item>
@@ -594,16 +588,13 @@
 		<item>LAYLIST</item>
 		<item>LAYPLOT</item>
 		<item>LFSURF</item>
-		<item>MAT</item>
 		<item>NDSURF</item>
-		<item>REAL</item>
 		<item>SHSD</item>
 		<item>SWADD</item>
 		<item>SWDEL</item>
 		<item>SWGEN</item>
 		<item>SWLIST</item>
 		<item>TSHAP</item>
-		<item>TYPE</item>
 		<item>UPGEOM</item>
 		<item>SE</item>
 		<item>SEDLIST</item>
@@ -874,7 +865,6 @@
 		<item>ESCHECK</item>
 		<item>ESSOLV</item>
 		<item>EXPASS</item>
-		<item>FSRS</item>
 		<item>FSSOLV</item>
 		<item>GAUGE</item>
 		<item>GMATRIX</item>
@@ -916,7 +906,6 @@
 		<item>CRPLIM</item>
 		<item>/GST</item>
 		<item>LNSRCH</item>
-		<item>MXPAND</item>
 		<item>NCNV</item>
 		<item>NEQIT</item>
 		<item>NLDIAG</item>
@@ -927,7 +916,6 @@
 		<item>PRED</item>
 		<item>PSTRES</item>
 		<item>SSTIF</item>
-		<item>SUBOPT</item>
 		<item>ALPHAD</item>
 		<item>BETAD</item>
 		<item>DMPRAT</item>
@@ -1082,7 +1070,6 @@
 		<item>DSYM</item>
 		<item>GSBDATA</item>
 		<item>GSLIST</item>
-		<item>LDREAD</item>
 		<item>F</item>
 		<item>FCUM</item>
 		<item>FDELE</item>
@@ -1255,7 +1242,6 @@
 		<item>PRRFOR</item>
 		<item>PRRSOL</item>
 		<item>PRSSOL</item>
-		<item>PRVECT</item>
 		<item>SUMTYPE</item>
 		<item>DESOL</item>
 		<item>ESORT</item>
@@ -1263,7 +1249,6 @@
 		<item>EUSORT</item>
 		<item>PLETAB</item>
 		<item>PLLS</item>
-		<item>PLVECT</item>
 		<item>PRETAB</item>
 		<item>PRVECT</item>
 		<item>SABS</item>
@@ -1853,8 +1838,6 @@
 		<item>EX</item>
 		<item>EY</item>
 		<item>EZ</item>
-		<item>GXY</item>
-		<item>NUXY</item>
 		<item>ALPX</item>
 		<item>ALPY</item>
 		<item>ALPZ</item>
@@ -1974,7 +1957,7 @@
 			<RangeDetect attribute="Normal Text" context="#stay" char="(" char1=")" />
 			<DetectChar attribute="error" context="open_parentesis" char="(" />
 			<!-- the next one highlight variable assignements as normal text, to avoid F,,FY,1 been highlighted as F=10 -->
-			<RegExpr attribute="Normal Text" context="#stay" String="^[A-Za-z0-9]+\=" />
+			<RegExpr attribute="Normal Text" context="#stay" String="^[A-Za-z0-9]+\=" column="0" />
 			<keyword attribute="Keyword" context="#stay" String="elements" />
 			<keyword attribute="MatProp" context="#stay" String="material_properties" />
 			<keyword attribute="Labels" context="#stay" String="force-displacement-labels" />
@@ -1992,7 +1975,7 @@
 			<keyword attribute="AUX3cmds" context="#stay" String="aux3_cmds" firstNonSpace="true" />
 			<keyword attribute="AUX12cmds" context="#stay" String="aux12_cmds" firstNonSpace="true" />
 			<keyword attribute="AUX15cmds" context="#stay" String="aux15_cmds" firstNonSpace="true" />
-			<keyword attribute="RUNSTATScmds" context="#stay" String="runstats_cmds" firstNonSpace="true" />
+			<keyword attribute="RUNSTATcmds" context="#stay" String="runstats_cmds" firstNonSpace="true" />
 			<keyword attribute="OPTIMIZATIONcmds" context="#stay" String="optimization_cmds" firstNonSpace="true" />
 			<keyword attribute="PROBcmds" context="#stay" String="probabilistic_cmds" firstNonSpace="true" />
 			<keyword attribute="DISPLAYcmds" context="#stay" String="display_cmds" firstNonSpace="true" />
@@ -2002,24 +1985,19 @@
 			<RangeDetect attribute="variable" context="#stay" char="%" char1="%" />
 			<keyword attribute="MatProp" context="#stay" String="APDL_commands" />
 			<Float attribute="NumFloat" context="#stay" />
-			<Int attribute="NumInt" context="#stay" >
-				<StringDetect attribute="NumInt" context="#stay" String="**" />
-			</Int>
+			<Int attribute="NumInt" context="Int Suffixes" />
+		</context>
+		<context name="Int Suffixes" attribute="NumInt" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+			<Detect2Chars attribute="NumInt" context="#pop" char="*" char1="*" />
 		</context>
 		<context attribute="String" name="doublequotestring" lineEndContext="#stay" >
 			<DetectChar attribute="String" context="#pop" char="&quot;" />
 		</context>
-		<context attribute="Normal Text" name="functions" lineEndContext="#pop" >
-			<RangeDetect attribute="Normal Text" context="#pop" char="(" char1=")" />
-			<DetectChar attribute="error" context="open_parentesis" char="(" />
-		</context>
 		<context attribute="parentesis_not_closed" name="open_parentesis" lineEndContext="#pop" >
 			<DetectChar attribute="Normal Text" context="#pop" char=")" />
 		</context>
-		<context attribute="comment" name="comment" lineEndContext="#pop" />
-		<context attribute="NumFloat" name="functions_arg" lineEndContext="#pop" >
-			<DetectChar attribute="Keyword" context="#stay" char="(" />
-			<DetectChar attribute="Keyword" context="#pop" char=")" />
+		<context attribute="comment" name="comment" lineEndContext="#pop" >
+			<IncludeRules context="##Comments" />
 		</context>
 	</contexts>
 	<itemDatas>
@@ -2049,7 +2027,6 @@
 		<itemData name="String" defStyleNum="dsString" />
 		<itemData name="NumInt" defStyleNum="dsDecVal" />
 		<itemData name="NumFloat" defStyleNum="dsFloat" />
-		<itemData name="functions_arg" defStyleNum="dsKeyword" />
 		<itemData name="comment" defStyleNum="dsComment" />
 		<itemData name="parentesis_not_closed" defStyleNum="dsRegionMarker" />
 		<itemData name="error" defStyleNum="dsError" />
@@ -2062,3 +2039,4 @@
 		<keywords casesensitive="0" weakDeliminator="/*" />
 	</general>
 </language>
+<!-- kate: replace-tabs off; -->

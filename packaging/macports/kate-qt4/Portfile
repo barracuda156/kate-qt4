@@ -37,23 +37,24 @@ long_description    Kate is the KDE advanced text editor: multiple documents and
                     single-document shell. This port builds the Kate 4.14 code base \
                     against Qt 4 only: the kdelibs pieces it needs are replaced by a \
                     small in-tree compatibility layer, so there is no kdelibs, kdeinit, \
-                    ksycoca, D-Bus or X11 dependency. Installs Kate.app and KWrite.app.
+                    ksycoca, D-Bus or X11 dependency. Installs Kate.app and KWrite.app, \
+                    with the current upstream set of syntax highlighting definitions \
+                    and the multi-file search plugin.
 homepage            https://kate-editor.org
 
-depends_build-append \
-                    port:perl5
+# pcre2 is the regular expression engine of syntax highlighting and search
 depends_lib-append  port:zlib \
-                    port:bzip2
+                    port:bzip2 \
+                    port:pcre2
 
 # Kate 4.14 is C++98 code; gnu++11 keeps the 'register' declarations legal
 # without asking anything of the compiler beyond C++11.
 compiler.cxx_standard   2011
 
 configure.args-append \
-                    -DPERL_EXECUTABLE=${prefix}/bin/perl5 \
                     -DKATE_BUILD_KWRITE=ON \
                     -DKATE_BUILD_KATE=ON \
-                    -DKATE_BUILD_ADDONS=OFF \
+                    -DKATE_BUILD_ADDONS=ON \
                     -DBUILD_TESTING=OFF \
                     -DKATE_INSTALL_BUNDLE_DIR=${applications_dir}
 

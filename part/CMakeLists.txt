@@ -166,6 +166,7 @@ utils/katecmds.cpp
 utils/kateconfig.cpp
 utils/katebookmarks.cpp
 utils/kateautoindent.cpp
+utils/katepcre.cpp
 utils/katetemplatehandler.cpp
 utils/kateprinter.cpp
 utils/kateglobal.cpp
@@ -240,4 +241,5 @@ target_link_libraries (katepartinterfaces
   ${QT_QTGUI_LIBRARY}
   ${QT_QTCORE_LIBRARY}
   ${ZLIB_LIBRARIES}
+  ${PCRE2_LIBRARIES}
 )

@@ -69,6 +69,7 @@ target_link_libraries(kate
     ${QT_QTGUI_LIBRARY}
     ${QT_QTCORE_LIBRARY}
     ${ZLIB_LIBRARIES}
+    ${PCRE2_LIBRARIES}
 )
 # katepartinterfaces must be force-linked whole so KatePart's self-registration
 # with KTextEditor::EditorChooser actually runs; see kate_link_whole_archive().

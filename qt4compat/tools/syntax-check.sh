@@ -41,7 +41,10 @@ if [ ! -f "$GEN/config.h" ]; then
 EOC
 fi
 
+# extra C libraries in Debian layout (pcre2 headers): ~/barracuda/deproot
+DEPROOT="${DEPROOT:-/home/sgr/barracuda/deproot/usr}"
 INCS="-I$GEN -I$ROOT/qt4compat/include -I$ROOT -I$ROOT/includes -I$ROOT/ktexteditor"
+[ -d "$DEPROOT/include" ] && INCS="$INCS -I$DEPROOT/include"
 INCS="$INCS -I$QTINC -I$QTINC/QtCore -I$QTINC/QtGui -I$QTINC/QtXml -I$QTINC/QtScript -I$QTINC/QtNetwork -I$QTINC/Qt"
 DEFS="-DQT_NO_KEYWORDS_NOT_USED -D_LARGEFILE64_SOURCE -DKATE_INSTALL_DATADIR=\"/usr/share/kate-qt4\""
 

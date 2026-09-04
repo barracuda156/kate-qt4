@@ -13,7 +13,10 @@ no kdeinit, no X11.
 * Qt 4.8.x with QtCore, QtGui, QtXml, QtScript, QtNetwork (QtScript drives
   the indenters and editor commands).
 * zlib; bzip2 optional (bzip2-compressed documents).
-* Perl (generates the PHP variants of the CSS/HTML/JavaScript syntax files).
+* pcre2 (the 16-bit library, `libpcre2-16`): the regular expression engine
+  of syntax highlighting and search, the same engine upstream Kate uses
+  through QRegularExpression, so the shipped highlighting definitions behave
+  identically. JIT is used when the library provides it.
 * A C++ compiler; the sources are C++98 and build with `-std=gnu++11` (the
   default set by CMake >= 3.1) which also avoids `register`-keyword errors
   with new GCCs.
@@ -57,20 +60,38 @@ enables the `kDebug()` output.
 `kate/` builds into the static library `kateinterfaces` (the `Kate::*`
 plugin interfaces and the application classes) and the `kate` executable.
 Plugins are not loaded at run time: a plugin is a static library made with
-`kate_add_static_plugin()` and imported into the executable with
-`K_IMPORT_PLUGIN()` (`kate/app/katebuiltinplugins.cpp`); its `.desktop`
-file, installed under `services/` in the data tree, is what
+`kate_add_static_plugin()`, which registers it in the global CMake property
+`KATE_STATIC_PLUGINS`; `kate/app` links every registered plugin and
+generates `katebuiltinplugins.cpp` (from `katebuiltinplugins.cpp.in`) with
+one `K_IMPORT_PLUGIN()` per plugin. A plugin's `.desktop` file, installed
+under `services/` in the data tree, is what
 `KServiceTypeTrader::query("Kate/Plugin")` lists. The document tree
-(`kate/filetree/`) is built in this way. Every `kate` invocation starts a
-new instance (the D-Bus "reuse the running Kate" logic is gone); on macOS
-Finder open requests reach the running instance through `QFileOpenEvent`.
-Dropping a folder onto Kate opens the files below it (a local directory
-walk instead of a `KIO::listRecursive` job).
+(`kate/filetree/`) and the addons under `addons/kate/` (option
+`KATE_BUILD_ADDONS`, on; `addons/kate/CMakeLists.txt` lists the ported
+ones, starting with the multi-file search plugin) are built this way.
+Every `kate` invocation starts a new instance (the D-Bus "reuse the running
+Kate" logic is gone); on macOS Finder open requests reach the running
+instance through `QFileOpenEvent`. Dropping a folder onto Kate opens the
+files below it (a local directory walk instead of a `KIO::listRecursive`
+job).
+
+## Syntax highlighting definitions
+
+`part/syntax/data/` carries the current upstream set from KDE's
+syntax-highlighting framework (the snapshot is named in its
+`CMakeLists.txt`), including the variants upstream generates at build time,
+generated once and committed. KatePart reads them with upstream's rules:
+per-rule word delimiters, `<include>` in keyword lists, pcre2 regexes.
+`qt4compat/tools/validate-syntax.py` checks a new snapshot (well-formed XML,
+every regex compiles in pcre2 16-bit mode, cross references resolve) and
+needs `pcre2test`; on the Linux box it lives in `~/barracuda/deproot`.
+User definitions go into `~/Library/Application Support/Kate/katepart/syntax/`
+(macOS) or `$XDG_DATA_HOME/kate-qt4/katepart/syntax/`.
 
 ## What is not built yet
 
-* addons (`addons/`, option `KATE_BUILD_ADDONS`, off) - the next ones to
-  port are the ones that need neither KIO nor Konsole;
+* most addons (see ROADMAP-QT4.md for the order; `addons/kate/CMakeLists.txt`
+  has the ones that are);
 * tests (`tests/`, option `BUILD_TESTING`, off);
 * spell checking (Sonnet is stubbed), remote files (no KIO), "Get Hot New
   Stuff" downloads, D-Bus scripting, X11 session management, translations.

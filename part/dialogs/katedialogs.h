@@ -46,7 +46,6 @@
 #include <QtCore/QStringList>
 #include <QtGui/QColor>
 #include <QtGui/QTabWidget>
-#include <QtGui/QTreeWidget>
 
 struct syntaxContextData;
 
@@ -361,28 +360,6 @@ class KatePartPluginConfigPage : public KateConfigPage
     class QListWidget *m_list;
 };
 
-
-class KateHlDownloadDialog: public KDialog
-{
-  Q_OBJECT
-
-  public:
-    KateHlDownloadDialog(QWidget *parent, const char *name, bool modal);
-    ~KateHlDownloadDialog();
-
-  private:
-    static unsigned parseVersion(const QString&);
-    class QTreeWidget  *list;
-    class QString listData;
-    class QNetworkAccessManager *m_nam;
-    class QNetworkReply *m_reply;
-
-  private Q_SLOTS:
-    void listDownloadFinished();
-
-  public Q_SLOTS:
-    void slotUser1();
-};
 
 /**
  * This dialog will prompt the user for what do with a file that is
