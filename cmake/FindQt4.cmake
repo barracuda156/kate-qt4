@@ -332,10 +332,10 @@ if(QT_QT_LIBRARY)
 endif()
 
 
-include(${CMAKE_CURRENT_LIST_DIR}/CheckCXXSymbolExists.cmake)
+include(CheckCXXSymbolExists)
 include(${CMAKE_CURRENT_LIST_DIR}/MacroAddFileDependencies.cmake)
-include(${CMAKE_CURRENT_LIST_DIR}/FindPackageHandleStandardArgs.cmake)
-include(${CMAKE_CURRENT_LIST_DIR}/CMakePushCheckState.cmake)
+include(FindPackageHandleStandardArgs)
+include(CMakePushCheckState)
 
 set(QT_USE_FILE ${CMAKE_ROOT}/Modules/UseQt4.cmake)
 
