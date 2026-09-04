@@ -36,6 +36,30 @@
 #   DIRECTORY installs a whole directory tree (optionally filtered by PATTERN,
 #   e.g. "*.js"); its contents are copied recursively into <root>/<dir>/.
 #   Files may be given as absolute paths (e.g. generated in the binary dir).
+#
+# kate_link_whole_archive(<target> <static-lib>)
+#   Links <static-lib> into <target> forcing every object file in, instead of
+#   only the ones that resolve an otherwise-undefined symbol. KatePart
+#   registers itself with KTextEditor::EditorChooser via a static object's
+#   constructor (part/utils/kateglobal.cpp, KateEditorRegistrar) rather than
+#   a symbol any caller references directly, since it plays the role a
+#   dynamically loaded plugin would elsewhere (dlopen runs every static
+#   initializer in a .so; a plain `target_link_libraries` against a static
+#   archive does not, so the linker drops that translation unit and the
+#   registration never happens, e.g. EditorChooser::editor() silently
+#   returning NULL, "A KDE text-editor component could not be found").
+#   Use this instead of a plain target_link_libraries() call for
+#   katepartinterfaces in every executable that expects KatePart to
+#   self-register (kwrite, and the kate app once it exists).
+function(kate_link_whole_archive _target _lib)
+    if(APPLE)
+        target_link_libraries(${_target} -Wl,-force_load,$<TARGET_FILE:${_lib}>)
+    elseif(MSVC)
+        target_link_libraries(${_target} -WHOLEARCHIVE:$<TARGET_FILE:${_lib}>)
+    else()
+        target_link_libraries(${_target} -Wl,--whole-archive ${_lib} -Wl,--no-whole-archive)
+    endif()
+endfunction()
 
 include(CMakeParseArguments)
 

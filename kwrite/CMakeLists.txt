@@ -44,7 +44,6 @@ else()
 endif()
 
 target_link_libraries(kwrite
-    katepartinterfaces
     ktexteditor
     qt4compat
     ${QT_QTSCRIPT_LIBRARY}
@@ -54,6 +53,9 @@ target_link_libraries(kwrite
     ${QT_QTCORE_LIBRARY}
     ${ZLIB_LIBRARIES}
 )
+# katepartinterfaces must be force-linked whole so KatePart's self-registration
+# with KTextEditor::EditorChooser actually runs; see kate_link_whole_archive().
+kate_link_whole_archive(kwrite katepartinterfaces)
 if(BZIP2_FOUND)
     target_link_libraries(kwrite ${BZIP2_LIBRARIES})
 endif()
