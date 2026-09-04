@@ -482,9 +482,16 @@ void KMainWindow::closeEvent(QCloseEvent *e)
                 not_withdrawn++;
         }
         if (!not_withdrawn) {
-            if (!queryExit() || d->shuttingDown) {
+            // last window closed: quit the application, as kdelibs does.
+            // Applications keep quitOnLastWindowClosed off (dialogs shown
+            // before the first window would end them otherwise), so nothing
+            // else quits; on macOS a window-less application also loses
+            // every menu but the application menu.
+            if (queryExit()) {
+                d->shuttingDown = true;
+                QCoreApplication::instance()->quit();
+            } else {
                 e->ignore();
-                return;
             }
         }
     } else {
