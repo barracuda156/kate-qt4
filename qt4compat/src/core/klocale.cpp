@@ -3,6 +3,8 @@
 
 #include <QtCore/QTextCodec>
 
+#include <langinfo.h>
+
 class KLocalePrivate
 {
 public:
@@ -149,11 +151,34 @@ QString KLocale::timeFormat() const
     return d->locale.timeFormat(QLocale::ShortFormat);
 }
 
+/* The locale's codec as a concrete, named codec. Qt 4's
+ * QTextCodec::codecForLocale() can be the iconv based locale mapper, whose
+ * name() is "System": stored as an encoding name (Kate keeps the editor's
+ * default encoding as a name) it matches nothing later, e.g. no entry of the
+ * encoding list in the file dialogs. kdelibs' KLocale answers with the
+ * charset of the locale instead; do the same, from nl_langinfo(CODESET),
+ * and use UTF-8 when the process runs in the C locale (applications started
+ * from the Finder have no LANG) or the charset is unknown to Qt. */
+static QTextCodec *concreteLocaleCodec()
+{
+    QTextCodec *c = QTextCodec::codecForLocale();
+    if (c && qstricmp(c->name().constData(), "System") != 0)
+        return c;
+    const char *charset = nl_langinfo(CODESET);
+    if (charset && *charset && qstricmp(charset, "US-ASCII") != 0 && qstricmp(charset, "ANSI_X3.4-1968") != 0
+        && qstricmp(charset, "646") != 0) {
+        QTextCodec *named = QTextCodec::codecForName(charset);
+        if (named && qstricmp(named->name().constData(), "System") != 0)
+            return named;
+    }
+    return QTextCodec::codecForName("UTF-8");
+}
+
 QTextCodec *KLocale::codecForEncoding() const
 {
     if (d->mib)
         return QTextCodec::codecForMib(d->mib);
-    return QTextCodec::codecForLocale();
+    return concreteLocaleCodec();
 }
 
 const QByteArray KLocale::encoding() const

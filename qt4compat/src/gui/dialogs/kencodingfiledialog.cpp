@@ -68,10 +68,14 @@ KEncodingFileDialog::KEncodingFileDialog(const QString &startDir, const QString 
     const QStringList encodings = KGlobal::charsets()->descriptiveEncodingNames();
     int insert = 0;
     int current = -1;
+    // the caller's encoding, else the locale's (a concrete codec, see
+    // KLocale::codecForEncoding: Qt's locale mapper is named "System" and
+    // would match no entry, leaving the combo on its first item)
     QString wanted = encoding;
-    if (wanted.isEmpty())
-        wanted = QString::fromLatin1(QTextCodec::codecForLocale()->name());
-    QTextCodec *wantedCodec = QTextCodec::codecForName(wanted.toLatin1());
+    QTextCodec *wantedCodec = wanted.isEmpty() ? 0 : QTextCodec::codecForName(wanted.toLatin1());
+    if (!wantedCodec || qstricmp(wantedCodec->name().constData(), "System") == 0)
+        wantedCodec = KGlobal::locale()->codecForEncoding();
+    int utf8 = -1;
     foreach (const QString &desc, encodings) {
         const QString enc = KGlobal::charsets()->encodingForName(desc);
         if (enc.isEmpty())
@@ -80,8 +84,13 @@ KEncodingFileDialog::KEncodingFileDialog(const QString &startDir, const QString 
         QTextCodec *c = QTextCodec::codecForName(enc.toLatin1());
         if (current < 0 && ((wantedCodec && c == wantedCodec) || enc.compare(wanted, Qt::CaseInsensitive) == 0))
             current = insert;
+        if (utf8 < 0 && c && c->mibEnum() == 106)
+            utf8 = insert;
         ++insert;
     }
+    // never leave the choice to the alphabetical order of the list
+    if (current < 0)
+        current = utf8;
     if (current >= 0)
         m_encodingCombo->setCurrentIndex(current);
 
