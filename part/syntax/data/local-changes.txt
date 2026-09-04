@@ -5,3 +5,13 @@
 #
 # tcl.xml: added "Portfile" to extensions (a MacPorts Portfile is a Tcl
 #   script but has no extension, so it would open as plain text); version 9 -> 10.
+#
+# gnuassembler.xml: priority 0 -> 1 (version 10 -> 11) so the GNU Assembler,
+#   not "Motorola 68k (VASM/Devpac)", is the default for *.s / *.S (both
+#   claimed them at equal priority; MIPS already sits at priority -1).
+#
+# asm-ppc.xml: NEW - PowerPC assembler, translated from the BBEdit CLM
+#   ppcasm.plist (github.com/barracuda156/PPC_Assembler_BBEdit_CLM). Menu-only
+#   (no extensions/mimetype). Regenerate with tools/make-asm-ppc.py if the
+#   module changes. This is our file, not an upstream one; a snapshot update
+#   keeps it (it has no upstream counterpart) but re-check it still validates.
