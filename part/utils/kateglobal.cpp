@@ -20,6 +20,8 @@
  */
 
 #include "kateglobal.h"
+
+#include <QtCore/QCoreApplication>
 #include "kateglobal.moc"
 
 #include "katedocument.h"
@@ -468,8 +470,29 @@ namespace {
    * qt4compat: KatePart is linked statically, there is no plugin factory.
    * Register the in-process editor with KTextEditor::EditorChooser.
    */
+  /**
+   * qt4compat: the editor singleton is reference-counted by its documents
+   * (registerDocument/deregisterDocument); in KDE the KParts factory
+   * (KateFactory, not built here) holds one reference as long as the
+   * library is loaded, so the editor outlives the last document. Hold that
+   * reference here for the life of the process: without it, closing the
+   * last document deleted the editor and Kate crashed creating the
+   * replacement document through its cached pointer. Released from a
+   * post routine, which is when the library would have been unloaded.
+   */
+  void kateReleaseEditorBaseRef ()
+  {
+    KateGlobal::decRef ();
+  }
+
   KTextEditor::Editor *kateEditorCreator ()
   {
+    static bool baseRefHeld = false;
+    if (!baseRefHeld) {
+      baseRefHeld = true;
+      KateGlobal::incRef ();
+      qAddPostRoutine (kateReleaseEditorBaseRef);
+    }
     return KateGlobal::self ();
   }
 
