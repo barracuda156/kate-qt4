@@ -51,9 +51,9 @@ checksums           ${distname}${extract.suffix} \
                     sha256  1d9bbf27fb5edb4767a0dc0ac911e395d67e0825a0c1708527fde25f4faffb35 \
                     size    3812702 \
                     ${overlay} \
-                    rmd160  2e97748541a0bec381866adf36bb2326b293b59f \
-                    sha256  1c99bc0fa79851936f0e3145c9cc0708dd8ccdb5c6ce630f256cbb09fe3a3e0f \
-                    size    2349676
+                    rmd160  1ce1c462ef3e472ba163caf726de90bd79f47e99 \
+                    sha256  d755c2d84f065dfb18bc66054e5d2f18f38abe154e9d87bfa2120414cfe1832a \
+                    size    2349624
 
 post-extract {
     # files the port adds, plus the rewritten upstream files listed in
