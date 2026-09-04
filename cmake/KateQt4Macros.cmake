@@ -86,6 +86,21 @@ endfunction()
 
 macro(kate_automoc _outvar)
     foreach(_src ${ARGN})
+        get_filename_component(_src_ext "${_src}" EXT)
+        string(TOLOWER "${_src_ext}" _src_ext)
+        # headers are sometimes listed alongside their .cpp in a target's
+        # source list (e.g. for IDE visibility); kate_automoc only makes
+        # sense for compiled sources (see the doc comment above,
+        # "kate_automoc(<outvar> <src.cpp>...)") - a header reaching here
+        # would be treated as its own _src, and "does this source's sibling
+        # header need wrapping" would then wrap the header against itself,
+        # duplicating whatever moc output its real .cpp already generates
+        # (duplicate symbols at link time, only visible once something force-
+        # links the whole static library instead of pulling in .o files on
+        # demand - see kate_link_whole_archive()).
+        if(NOT _src_ext MATCHES "\\.(cpp|cxx|cc|c\\+\\+)$")
+            continue()
+        endif()
         get_filename_component(_abs_src "${_src}" ABSOLUTE)
         get_filename_component(_src_dir "${_abs_src}" PATH)
         get_filename_component(_src_base "${_abs_src}" NAME_WE)
