@@ -33,6 +33,10 @@ public:
     void updateUserTimestamp(int time = 0);
     unsigned long userTimestamp() const;
     void updateRemoteUserTimestamp(const QString &service, int time = 0);
+    /* X11 startup notification ids: always empty here */
+    QByteArray startupId() const;
+    void setStartupId(const QByteArray &startupId);
+    void clearStartupId();
     static void setQuitOnLastWindowClosed(bool quit);
 
     virtual bool event(QEvent *e);

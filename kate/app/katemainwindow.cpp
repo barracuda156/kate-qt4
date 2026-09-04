@@ -69,9 +69,8 @@
 #include <QDropEvent>
 #include <QList>
 #include <QDesktopWidget>
+#include <QDirIterator>
 
-#include <kio/job.h>
-#include <KIO/ListJob>
 #include <KFileItem>
 
 #include <assert.h>
@@ -667,9 +666,15 @@ void KateMainWindow::slotDropEvent( QDropEvent * event )
       // if url has no file component, try and recursively scan dir
       KFileItem kitem( KFileItem::Unknown, KFileItem::Unknown, *i, true );
       if( kitem.isDir() ) {
-        KIO::ListJob *list_job = KIO::listRecursive(*i, KIO::DefaultFlags, false);
-        connect(list_job, SIGNAL(entries(KIO::Job*,KIO::UDSEntryList)),
-                this, SLOT(slotListRecursiveEntries(KIO::Job*,KIO::UDSEntryList)));
+        // open every regular file below the dropped folder (no hidden
+        // files/dirs, no symlink following - what KIO::listRecursive did)
+        if ( i->isLocalFile() ) {
+          QDirIterator it( i->toLocalFile(), QDir::Files | QDir::NoDotAndDotDot | QDir::Readable, QDirIterator::Subdirectories );
+          while ( it.hasNext() ) {
+            it.next();
+            m_viewManager->openUrl( KUrl( it.filePath() ) );
+          }
+        }
       }
       else {
         m_viewManager->openUrl (*i);
@@ -684,20 +689,6 @@ void KateMainWindow::slotDropEvent( QDropEvent * event )
       KateDocManager::self()->createDoc();
     doc->setText(event->mimeData()->text());
     m_viewManager->activateView(doc);
-  }
-}
-
-void KateMainWindow::slotListRecursiveEntries(KIO::Job *job, const KIO::UDSEntryList &list)
-{
-  const KUrl dir = static_cast<KIO::SimpleJob*>( job )->url();
-  foreach( const KIO::UDSEntry &entry, list )
-  {
-      KUrl currentUrl = dir;
-      currentUrl.addPath( entry.stringValue( KIO::UDSEntry::UDS_NAME ) );
-      if( !entry.isDir() )
-      {
-          m_viewManager->openUrl(currentUrl);
-      }
   }
 }
 

@@ -34,7 +34,6 @@ class KateMainWindow;
 class KatePluginManager;
 class KateDocManager;
 class KateAppCommands;
-class KateAppAdaptor;
 
 namespace KTextEditor
 {
@@ -204,9 +203,7 @@ class KATEINTERFACES_EXPORT KateApp : public KApplication
     bool openUrl (const KUrl &url, const QString &encoding, bool isTempFile);
 
     KTextEditor::Document* openDocUrl (const KUrl &url, const QString &encoding, bool isTempFile);
-    
-    void emitDocumentClosed(const QString& token);
-    
+
     /**
      * position cursor in current active view
      * @param line line to set
@@ -238,6 +235,13 @@ class KATEINTERFACES_EXPORT KateApp : public KApplication
       return m_mainWindowsInterfaces;
     }
 
+  public Q_SLOTS:
+    /**
+     * open a document requested by the platform (macOS Finder "open with",
+     * delivered by the qt4compat KApplication as openURLRequest(QUrl))
+     */
+    void openRequestedUrl (const QUrl &url);
+
   private:
     bool m_shouldExit;
     /**
@@ -264,11 +268,6 @@ class KATEINTERFACES_EXPORT KateApp : public KApplication
      * session manager
      */
     KateSessionManager *m_sessionManager;
-
-    /**
-     * dbus interface
-     */
-    KateAppAdaptor *m_adaptor;
 
     /**
      * known main windows

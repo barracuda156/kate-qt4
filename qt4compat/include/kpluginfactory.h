@@ -1,5 +1,6 @@
 /* qt4compat: kpluginfactory.h - in-process KPluginFactory. registerPlugin<T>()
- * records a creator, create<T>() instantiates it; nothing is loaded from disk. */
+ * records a creator, create<T>() instantiates it; nothing is loaded from disk.
+ * Plugins are linked in statically, see kexportplugin.h / kpluginloader.h. */
 #ifndef KDECOMPAT_KPLUGINFACTORY_H
 #define KDECOMPAT_KPLUGINFACTORY_H
 
@@ -9,12 +10,16 @@
 #include <kdemacros.h>
 #include <kcomponentdata.h>
 #include <kexportplugin.h>
+#include <kglobal.h>
 
 class KAboutData;
 class KPluginFactoryPrivate;
 class QWidget;
 namespace KParts { class Part; }
 
+/* As in kdelibs, the generated factory class also carries a static
+ * componentData() (plugins pass it to their KXMLGUIClient); it is filled in
+ * when the factory is constructed, i.e. when the plugin gets loaded. */
 #define K_PLUGIN_FACTORY_DECLARATION_WITH_BASEFACTORY(name, baseFactory) \
 class name : public baseFactory \
 { \
@@ -22,25 +27,37 @@ public: \
     explicit name(const char *componentName = 0, const char *catalogName = 0, QObject *parent = 0); \
     explicit name(const KAboutData &aboutData, QObject *parent = 0); \
     ~name(); \
+    static KComponentData componentData(); \
 private: \
     void init(); \
 };
 
 #define K_PLUGIN_FACTORY_DEFINITION_WITH_BASEFACTORY(name, baseFactory, pluginRegistrations) \
+static KComponentData *name##_factoryComponentData() \
+{ \
+    static KComponentData data; \
+    return &data; \
+} \
 name::name(const char *componentName, const char *catalogName, QObject *parent) \
     : baseFactory(componentName, catalogName, parent) \
 { \
+    *name##_factoryComponentData() = KPluginFactory::componentData(); \
     init(); \
 } \
 name::name(const KAboutData &aboutData, QObject *parent) \
     : baseFactory(aboutData, parent) \
 { \
+    *name##_factoryComponentData() = KPluginFactory::componentData(); \
     init(); \
 } \
 name::~name() {} \
 void name::init() \
 { \
     pluginRegistrations \
+} \
+KComponentData name::componentData() \
+{ \
+    return *name##_factoryComponentData(); \
 }
 
 #define K_PLUGIN_FACTORY_WITH_BASEFACTORY(name, baseFactory, pluginRegistrations) \

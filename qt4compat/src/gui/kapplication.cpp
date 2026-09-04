@@ -81,6 +81,19 @@ void KApplication::updateUserTimestamp(int)
 {
 }
 
+QByteArray KApplication::startupId() const
+{
+    return QByteArray();
+}
+
+void KApplication::setStartupId(const QByteArray &)
+{
+}
+
+void KApplication::clearStartupId()
+{
+}
+
 unsigned long KApplication::userTimestamp() const
 {
     return 0;

@@ -25,7 +25,6 @@
 #include "katemainwindow.h"
 #include "katedocmanager.h"
 #include "katepluginmanager.h"
-#include "katerunninginstanceinfo.h"
 
 #include <KStandardDirs>
 #include <KLocale>
@@ -40,7 +39,6 @@
 #include <KMenu>
 #include <KActionCollection>
 #include <KIO/NetAccess>
-#include <KIO/CopyJob>
 #include <KStringHandler>
 
 #include <QDir>
@@ -154,8 +152,7 @@ bool KateSession::rename (const QString &name)
   srcUrl.addPath(oldSessionFile);
   KUrl destUrl(QString("file://"));
   destUrl.addPath(sessionFile());
-  KIO::CopyJob *job = KIO::move(srcUrl, destUrl, KIO::HideProgressInfo);
-  if ( ! KIO::NetAccess::synchronousRun(job, 0) )
+  if ( ! KIO::NetAccess::move(srcUrl, destUrl, 0) )
   {
     m_sessionFileRel = oldRel;
     return false;
@@ -262,28 +259,6 @@ bool KateSessionManager::activateSession (KateSession::Ptr session,
                                           bool saveLast,
                                           bool loadNew)
 {
-  if ( (!session->sessionName().isEmpty()) && (m_activeSession!=session)) {
-    //check if the requested session is already open in another instance
-    KateRunningInstanceMap instances;
-    if (!fillinRunningKateAppInstances(&instances))
-    {
-      KMessageBox::error(0,i18n("Internal error: there is more than one instance open for a given session."));
-      return false;
-    }
-
-    if (instances.contains(session->sessionName()))
-    {
-      if (KMessageBox::questionYesNo(0,i18n("Session '%1' is already opened in another kate instance, change there instead of reopening?",session->sessionName()),
-            QString(),KStandardGuiItem::yes(),KStandardGuiItem::no(),"katesessionmanager_switch_instance")==KMessageBox::Yes)
-      {
-        instances[session->sessionName()]->dbus_if->call("activate");
-        cleanupRunningKateAppInstanceMap(&instances);
-        return false;
-      }
-    }
-
-    cleanupRunningKateAppInstanceMap(&instances);
-  }
   // try to close last session
   if (closeLast)
   {

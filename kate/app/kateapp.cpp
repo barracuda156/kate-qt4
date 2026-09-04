@@ -44,7 +44,6 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include "kateappadaptor.h"
 
 KateApp::KateApp (KCmdLineArgs *args)
     : KApplication ()
@@ -64,10 +63,10 @@ KateApp::KateApp (KCmdLineArgs *args)
 
   // session manager up
   m_sessionManager = new KateSessionManager (this);
-  
-  // dbus
-  m_adaptor = new KateAppAdaptor( this );
-  
+
+  // files opened from the Finder arrive as QFileOpenEvent -> openURLRequest
+  connect(this, SIGNAL(openURLRequest(QUrl)), this, SLOT(openRequestedUrl(QUrl)), Qt::QueuedConnection);
+
   // real init
   initKate ();
 
@@ -75,12 +74,7 @@ KateApp::KateApp (KCmdLineArgs *args)
 }
 
 KateApp::~KateApp ()
-{  
-  // unregister...
-  m_adaptor->emitExiting ();
-  QDBusConnection::sessionBus().unregisterObject( QLatin1String("/MainApplication") );
-  delete m_adaptor;
-  
+{
   // l8r, app commands
   delete m_appCommands;
 
@@ -139,9 +133,6 @@ void KateApp::initKate ()
       return ;
     }
   }
-
-  // application dbus interface
-  QDBusConnection::sessionBus().registerObject( QLatin1String("/MainApplication"), this );
 }
 
 void KateApp::restoreKate ()
@@ -380,6 +371,14 @@ bool KateApp::openInput (const QString &text)
   return doc->setText (text);
 }
 
+void KateApp::openRequestedUrl (const QUrl &url)
+{
+  if (url.isEmpty())
+    return;
+
+  openUrl (KUrl (url), QString(), false);
+}
+
 KateMainWindow *KateApp::newMainWindow (KConfig *sconfig_, const QString &sgroup_)
 {
   KConfig *sconfig = sconfig_ ? sconfig_ : KGlobal::config().data();
@@ -434,11 +433,6 @@ KateMainWindow *KateApp::mainWindow (int n)
     return m_mainWindows[n];
 
   return 0;
-}
-
-void KateApp::emitDocumentClosed(const QString& token)
-{
-  m_adaptor->emitDocumentClosed(token);
 }
 
 // kate: space-indent on; indent-width 2; replace-tabs on;

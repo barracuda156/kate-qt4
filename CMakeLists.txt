@@ -1,4 +1,4 @@
-# Kate on plain Qt 4 (no kdelibs) - see BUILDING-QT4.md and qt4compat/README.md
+# Kate and KWrite on plain Qt 4 (no kdelibs) - see BUILDING-QT4.md and qt4compat/README.md
 cmake_minimum_required(VERSION 3.5)
 project(kate)
 
@@ -7,8 +7,10 @@ set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 include(CheckFunctionExists)
 include(KateQt4Macros)
 
+set(KATE_VERSION 4.14.3)
+
 option(KATE_BUILD_KWRITE "Build the KWrite editor shell" ON)
-option(KATE_BUILD_KATE "Build the Kate MDI application (not ported yet)" OFF)
+option(KATE_BUILD_KATE "Build the Kate MDI application" ON)
 option(KATE_BUILD_ADDONS "Build addons/plugins (not ported yet)" OFF)
 option(BUILD_TESTING "Build tests (not ported yet)" OFF)
 
@@ -55,8 +57,18 @@ configure_file(config.h.cmake ${CMAKE_BINARY_DIR}/config.h)
 # install layout
 if(APPLE)
     set(KATE_INSTALL_BUNDLE_DIR "/Applications" CACHE PATH "Where .app bundles are installed")
-    # kate_install_data() targets: relative to the install prefix, inside the bundle
-    set(KATE_BUNDLE_RESOURCES_INSTALL_DIR "${KATE_INSTALL_BUNDLE_DIR}/KWrite.app/Contents/Resources")
+    # Every application bundle is self-contained: kate_install_data() installs
+    # the data files into Contents/Resources of each bundle listed here (where
+    # KStandardDirs looks first), see KateQt4Macros.cmake.
+    set(KATE_APP_BUNDLES)
+    if(KATE_BUILD_KWRITE)
+        list(APPEND KATE_APP_BUNDLES kwrite)
+        set(KATE_APP_kwrite_RESOURCES_DIR "${KATE_INSTALL_BUNDLE_DIR}/KWrite.app/Contents/Resources")
+    endif()
+    if(KATE_BUILD_KATE)
+        list(APPEND KATE_APP_BUNDLES kate)
+        set(KATE_APP_kate_RESOURCES_DIR "${KATE_INSTALL_BUNDLE_DIR}/Kate.app/Contents/Resources")
+    endif()
 else()
     set(KATE_INSTALL_BUNDLE_DIR "" CACHE PATH "Unused on this platform")
 endif()

@@ -7,11 +7,25 @@
 #include <QtCore/QHash>
 
 namespace {
-static QHash<QString, KPluginLoader::FactoryCreator> *creators()
+struct StaticPlugin
 {
-    static QHash<QString, KPluginLoader::FactoryCreator> *h = new QHash<QString, KPluginLoader::FactoryCreator>;
+    StaticPlugin() : creator(0), factory(0) {}
+    KPluginLoader::FactoryCreator creator;
+    KPluginFactory *factory; /* created on first use, lives as long as the process */
+};
+
+/* heap allocated on first use: K_IMPORT_PLUGIN registrars run during static
+ * initialization, before any file-scope object here would be constructed */
+static QHash<QString, StaticPlugin> *plugins()
+{
+    static QHash<QString, StaticPlugin> *h = new QHash<QString, StaticPlugin>;
     return h;
 }
+}
+
+KStaticPluginRegistrar::KStaticPluginRegistrar(const char *name, KPluginLoader::FactoryCreator creator)
+{
+    KPluginLoader::registerStaticPlugin(QString::fromLatin1(name), creator);
 }
 
 class KPluginLoaderPrivate
@@ -48,10 +62,12 @@ KPluginFactory *KPluginLoader::factory()
 {
     if (d->factory)
         return d->factory;
-    QHash<QString, FactoryCreator>::const_iterator it = creators()->constFind(d->name);
-    if (it == creators()->constEnd())
+    QHash<QString, StaticPlugin>::iterator it = plugins()->find(d->name);
+    if (it == plugins()->end())
         return 0;
-    d->factory = it.value()();
+    if (!it->factory && it->creator)
+        it->factory = it->creator();
+    d->factory = it->factory;
     return d->factory;
 }
 
@@ -87,10 +103,16 @@ QString KPluginLoader::findPlugin(const QString &name, const KComponentData &)
 
 void KPluginLoader::registerStaticPlugin(const QString &name, FactoryCreator creator)
 {
-    creators()->insert(name, creator);
+    StaticPlugin &p = (*plugins())[name];
+    p.creator = creator;
 }
 
 bool KPluginLoader::hasStaticPlugin(const QString &name)
 {
-    return creators()->contains(name);
+    return plugins()->contains(name);
+}
+
+QStringList KPluginLoader::staticPlugins()
+{
+    return plugins()->keys();
 }

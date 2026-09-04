@@ -7,8 +7,10 @@
 #include <kdemacros.h>
 #include <ksharedptr.h>
 
+class KAboutData;
 class KCharsets;
 class KComponentData;
+class KConfig;
 class KLocale;
 class KSharedConfig;
 class KStandardDirs;

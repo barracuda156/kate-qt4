@@ -1,23 +1,28 @@
+# Document tree ("File Tree") plugin. Upstream this is a dynamically loaded
+# Kate/Plugin that Kate always loads (X-Kate-LoadAlways=True); here it is a
+# static library linked into the kate executable, imported there by
+# kate/app/katebuiltinplugins.cpp. The service file and the XMLGUI
+# definition are installed as data so KServiceTypeTrader finds the plugin
+# and Kate::XMLGUIClient finds kate/plugins/filetree/ui.rc.
 
-project(katefiletreeplugin)
+set(katefiletreeplugin_PART_SRCS
+    katefiletreeplugin.cpp
+    katefiletree.cpp
+    katefiletreemodel.cpp
+    katefiletreeproxymodel.cpp
+    katefiletreeconfigpage.cpp
+    katefiletreepluginsettings.cpp
+)
 
-set(katefiletreeplugin_PART_SRCS katefiletreeplugin.cpp katefiletree.cpp katefiletreemodel.cpp katefiletreeproxymodel.cpp katefiletreeconfigpage.cpp katefiletreepluginsettings.cpp )
+kate_add_static_plugin(katefiletreeplugin ${katefiletreeplugin_PART_SRCS})
 
-if(NOT KDE4_FOUND)
-  find_package(KDE4 REQUIRED)
-  include_directories( ${KDE4_INCLUDES} ${QT_INCLUDES} )
-endif(NOT KDE4_FOUND)
+target_link_libraries(katefiletreeplugin
+    kateinterfaces
+    ktexteditor
+    qt4compat
+    ${QT_QTGUI_LIBRARY}
+    ${QT_QTCORE_LIBRARY}
+)
 
-include_directories( ${CMAKE_CURRENT_BINARY_DIR} )
-kde4_add_plugin(katefiletreeplugin ${katefiletreeplugin_PART_SRCS})
-
-target_link_libraries(katefiletreeplugin ${KDE4_KFILE_LIBS} ${KDE4_KPARTS_LIBS} kateinterfaces ${KDE4_KTEXTEDITOR_LIBS} )
-
-install(TARGETS katefiletreeplugin  DESTINATION ${PLUGIN_INSTALL_DIR} )
-
-
-########### install files ###############
-
-install( FILES ui.rc  DESTINATION  ${DATA_INSTALL_DIR}/kate/plugins/filetree )
-install( FILES katefiletreeplugin.desktop  DESTINATION  ${SERVICES_INSTALL_DIR} )
-
+kate_install_data(kate/plugins/filetree FILES ui.rc APPS kate)
+kate_install_data(services FILES katefiletreeplugin.desktop APPS kate)

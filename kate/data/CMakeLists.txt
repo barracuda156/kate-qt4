@@ -1,9 +1,14 @@
-# desktop files and co
-install( PROGRAMS kate.desktop  DESTINATION  ${XDG_APPS_INSTALL_DIR} )
-install( FILES katerc  DESTINATION  ${CONFIG_INSTALL_DIR} )
-install( FILES tips kateui.rc DESTINATION  ${DATA_INSTALL_DIR}/kate )
-install( FILES kateplugin.desktop  DESTINATION  ${SERVICETYPES_INSTALL_DIR} )
-install( FILES kate-2.4.upd  DESTINATION  ${KCONF_UPDATE_INSTALL_DIR} )
+# Kate application data: the XMLGUI definition and the default settings.
+# Not installed: kateplugin.desktop (a ksycoca service type definition; the
+# trader here matches on the ServiceTypes= line of the plugin files
+# directly), kate-2.4.upd (kconf_update), tips (KTipDialog is a stub).
+
+kate_install_data(kate FILES kateui.rc APPS kate)
+kate_install_data(config FILES katerc APPS kate)
+
+if(NOT APPLE)
+    install(PROGRAMS kate.desktop DESTINATION ${CMAKE_INSTALL_PREFIX}/share/applications)
+endif()
 
 # kate application icons
-add_subdirectory (icons)
+add_subdirectory(icons)

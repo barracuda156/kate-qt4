@@ -23,7 +23,8 @@ the code must stay portable to any C++98 compiler and to Linux for testing.
     src/xmlgui/     vendored KXMLGUI + KMainWindow/KXmlGuiWindow/KToolBar/KMenuBar/KStatusBar
     src/parts/      KParts (Part, ReadOnlyPart, ReadWritePart, MainWindow, PartBase)
     src/io/         KTemporaryFile, KSaveFile, KDirWatch, KFilterDev, KProcess, KShell,
-                    KMimeType, KCharsets, KEncodingProber
+                    KMimeType, KCharsets, KEncodingProber, KService/KServiceTypeTrader
+                    (.desktop files), KPluginLoader/KPluginFactory (static plugins)
     src/sonnet/     Sonnet stubs (no spell checking yet; NSSpellChecker comes later)
     data/           icon theme subset and other resources compiled in via qrc
     tools/          syntax-check.sh, gen-forwarders.sh
@@ -44,8 +45,17 @@ kwrite and kate.
   a one-line `qt4compat:` comment and are LGPL-2.0-or-later like Kate.
 * Export macros (`KDECORE_EXPORT`, `KDEUI_EXPORT`, ...) are defined empty in
   `kdemacros.h`; keep using them so the code stays close to kdelibs.
-* No KDE runtime assumptions: no `.desktop` service lookups, no D-Bus, no
-  ksycoca, no kdeinit. Anything that needs a service returns an empty result.
+* No KDE runtime assumptions: no D-Bus, no ksycoca, no kdeinit, no dynamic
+  plugin loading. Services are the `services/*.desktop` files in the data
+  directories (`KService::allServices()`, parsed with KConfig); a service
+  that names a plugin library is listed by `KServiceTypeTrader` only when
+  that plugin is linked in. Plugins keep their `K_PLUGIN_FACTORY` /
+  `K_EXPORT_PLUGIN` sources: compiled with `KDE_STATIC_PLUGIN_NAME=<name>`
+  (`kate_add_static_plugin()`) the export macro defines
+  `kde_static_plugin_create_<name>()`, and `K_IMPORT_PLUGIN(<name>)` in the
+  executable's own sources registers it with `KPluginLoader`, which hands out
+  one factory instance per process (kexportplugin.h, kpluginloader.h).
+  Anything else that would need a service returns an empty result.
 * Resource files (XMLGUI `.rc`, syntax XML, scripts) are found via
   `KStandardDirs` (see kstandarddirs.h for the search order); on macOS they
   ship in the app bundle's `Resources`.

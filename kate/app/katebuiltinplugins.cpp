@@ -1,0 +1,38 @@
+/* This file is part of the KDE project
+   Copyright (C) 2026 The Kate qt4-pure port
+
+   This library is free software; you can redistribute it and/or
+   modify it under the terms of the GNU Library General Public
+   License version 2 as published by the Free Software Foundation.
+
+   This library is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   Library General Public License for more details.
+
+   You should have received a copy of the GNU Library General Public License
+   along with this library; see the file COPYING.LIB.  If not, write to
+   the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+   Boston, MA 02110-1301, USA.
+*/
+
+/*
+ * The Kate plugins linked into this executable.
+ *
+ * There is no dynamic plugin loading in the pure Qt 4 build: every plugin is
+ * a static library built with kate_add_static_plugin() and made known to
+ * KPluginLoader here, Q_IMPORT_PLUGIN style. The name is the plugin's
+ * X-KDE-Library value; KatePluginManager still discovers plugins through
+ * KServiceTypeTrader::query("Kate/Plugin"), i.e. through the .desktop files
+ * installed under services/, and creates them through KService::createInstance().
+ *
+ * This list must stay in the executable's own sources (not in a library):
+ * the registrars are static objects that nothing references, which the
+ * linker keeps only for object files it links unconditionally.
+ */
+
+#include <kpluginloader.h>
+
+K_IMPORT_PLUGIN(katefiletreeplugin)
+
+// kate: space-indent on; indent-width 2; replace-tabs on;

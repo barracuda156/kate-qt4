@@ -40,7 +40,7 @@
 #include <KCodecs>
 #include <KMessageBox>
 #include <KEncodingFileDialog>
-#include <KIO/DeleteJob>
+#include <KIO/NetAccess>
 #include <KIconLoader>
 #include <KProgressDialog>
 #include <KColorScheme>
@@ -162,7 +162,6 @@ KTextEditor::Document *KateDocManager::createDoc (const KateDocumentInfo& docInf
 
 void KateDocManager::deleteDoc (KTextEditor::Document *doc)
 {
-  KateApp::self()->emitDocumentClosed(QString("%1").arg((qptrdiff)doc));
   kDebug()<<"deleting document with name:"<<doc->documentName();
 
   // document will be deleted, soon
@@ -327,7 +326,7 @@ bool KateDocManager::closeDocuments(const QList<KTextEditor::Document *> &docume
                                             "Do you want to delete it anyway?", m_tempFiles[ doc ].first.pathOrUrl()),
                                       i18n("Delete File?") ) == KMessageBox::Yes )
       {
-        KIO::del( m_tempFiles[ doc ].first, KIO::HideProgressInfo );
+        KIO::NetAccess::del( m_tempFiles[ doc ].first, 0 );
         kDebug(13001) << "Deleted temporary file " << m_tempFiles[ doc ].first;
         m_tempFiles.remove( doc );
       }

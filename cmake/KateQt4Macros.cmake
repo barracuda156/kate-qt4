@@ -19,7 +19,8 @@
 # kate_add_ui_files(<outvar> <file.ui>...)
 #   qt4_wrap_ui wrapper; the ui_*.h files land in ${CMAKE_CURRENT_BINARY_DIR}.
 #
-# kate_install_data(<resource-relative-dir> FILES <file>... [DIRECTORY <dir> [PATTERN <glob>]])
+# kate_install_data(<resource-relative-dir> FILES <file>... [DIRECTORY <dir> [PATTERN <glob>]]
+#                   [APPS <app>...])
 #   Registers data files (XMLGUI .rc, syntax XML, scripts, config defaults)
 #   under a directory relative to the "data" resource root that
 #   KStandardDirs searches, e.g. kate_install_data(katepart FILES katepartui.rc)
@@ -28,14 +29,44 @@
 #     * ${CMAKE_BINARY_DIR}/share                      when running from the build tree
 #       (the root CMakeLists passes it as KATE_SOURCE_DATADIRS),
 #     * <bundle>/Contents/Resources                    on macOS after install,
-#     * ${CMAKE_INSTALL_PREFIX}/share/kate-qt4         elsewhere after install.
+#       for every application bundle being built (KATE_APP_BUNDLES, set by
+#       the root CMakeLists: each .app carries its own copy of the data it
+#       needs, so the bundles stay self-contained) - or only for the bundles
+#       named with APPS, for files that belong to one application
+#       (kate_install_data(kwrite FILES kwriteui.rc APPS kwrite)),
+#     * ${CMAKE_INSTALL_PREFIX}/share/kate-qt4         elsewhere after install
+#       (APPS is ignored there: one shared data directory).
 #   Files are copied into the staging tree at build time (target kate-data)
 #   and installed with install(FILES)/install(DIRECTORY). Use "config" as
 #   <dir> for files that KStandardDirs looks up with the "config" resource
-#   type (they are placed in <root>/config/).
+#   type (they are placed in <root>/config/), "services" for plugin .desktop
+#   files (KService/KServiceTypeTrader scan <root>/services/).
 #   DIRECTORY installs a whole directory tree (optionally filtered by PATTERN,
 #   e.g. "*.js"); its contents are copied recursively into <root>/<dir>/.
 #   Files may be given as absolute paths (e.g. generated in the binary dir).
+#
+# kate_add_static_plugin(<name> <src.cpp>...)
+#   Builds a KDE-style plugin (K_PLUGIN_FACTORY/K_EXPORT_PLUGIN sources plus a
+#   .desktop service file) as a static library that an application links in.
+#   <name> must be the X-KDE-Library value of the plugin's .desktop file. The
+#   sources are compiled with KDE_STATIC_PLUGIN_NAME=<name>, which makes
+#   K_EXPORT_PLUGIN() emit kde_static_plugin_create_<name>(); the application
+#   picks that up with K_IMPORT_PLUGIN(<name>) in one of its own sources (see
+#   qt4compat/include/kexportplugin.h and kpluginloader.h) and links the
+#   library with target_link_libraries(). Install the .desktop file with
+#   kate_install_data(services FILES <name>.desktop) so the trader lists it.
+#
+# kate_macos_app_icon(<outvar> <icon.icns> <icon.png>)
+#   Sets <outvar> to the .icns source file to add to a MACOSX_BUNDLE target
+#   (with MACOSX_PACKAGE_LOCATION Resources) and MACOSX_BUNDLE_ICON_FILE in
+#   the calling scope: a prebuilt qt4compat/data/<icon.icns> is used when
+#   present, otherwise the icon is generated at build time with sips
+#   (available on every macOS since 10.4) from <icon.png>. <outvar> stays
+#   empty when neither is possible.
+#
+# kate_set_bundle_properties(<target> <BundleName> <bundle-identifier> <info-string>)
+#   The MACOSX_BUNDLE_* properties shared by the application bundles
+#   (Info.plist template, version from KATE_VERSION, copyright).
 #
 # kate_link_whole_archive(<target> <static-lib>)
 #   Links <static-lib> into <target> forcing every object file in, instead of
@@ -178,12 +209,21 @@ macro(kate_add_ui_files _outvar)
 endmacro()
 
 function(kate_install_data _dir)
-    cmake_parse_arguments(KID "" "DIRECTORY;PATTERN" "FILES" ${ARGN})
+    cmake_parse_arguments(KID "" "DIRECTORY;PATTERN" "FILES;APPS" ${ARGN})
     set(_staging "${KATE_DATA_STAGING_DIR}/${_dir}")
+    set(_install_dests)
     if(APPLE)
-        set(_install_dest "${KATE_BUNDLE_RESOURCES_INSTALL_DIR}/${_dir}")
+        set(_apps ${KID_APPS})
+        if(NOT _apps)
+            set(_apps ${KATE_APP_BUNDLES})
+        endif()
+        foreach(_app ${_apps})
+            if(KATE_APP_${_app}_RESOURCES_DIR)
+                list(APPEND _install_dests "${KATE_APP_${_app}_RESOURCES_DIR}/${_dir}")
+            endif()
+        endforeach()
     else()
-        set(_install_dest "${KATE_DATA_INSTALL_DIR}/${_dir}")
+        set(_install_dests "${KATE_DATA_INSTALL_DIR}/${_dir}")
     endif()
     string(REPLACE "/" "_" _tag "${_dir}")
     foreach(_f ${KID_FILES})
@@ -197,7 +237,9 @@ function(kate_install_data _dir)
         string(MAKE_C_IDENTIFIER "kate-data-${_tag}-${_name}" _tname)
         add_custom_target(${_tname} DEPENDS "${_staging}/${_name}")
         add_dependencies(kate-data ${_tname})
-        install(FILES "${_abs}" DESTINATION "${_install_dest}")
+        foreach(_dest ${_install_dests})
+            install(FILES "${_abs}" DESTINATION "${_dest}")
+        endforeach()
     endforeach()
     if(KID_DIRECTORY)
         get_filename_component(_abs_dir "${KID_DIRECTORY}" ABSOLUTE)
@@ -219,10 +261,56 @@ function(kate_install_data _dir)
         endforeach()
         add_custom_target(${_tname} DEPENDS ${_staged_files})
         add_dependencies(kate-data ${_tname})
-        if(KID_PATTERN)
-            install(DIRECTORY "${_abs_dir}/" DESTINATION "${_install_dest}" FILES_MATCHING PATTERN "${KID_PATTERN}")
-        else()
-            install(DIRECTORY "${_abs_dir}/" DESTINATION "${_install_dest}")
+        foreach(_dest ${_install_dests})
+            if(KID_PATTERN)
+                install(DIRECTORY "${_abs_dir}/" DESTINATION "${_dest}" FILES_MATCHING PATTERN "${KID_PATTERN}")
+            else()
+                install(DIRECTORY "${_abs_dir}/" DESTINATION "${_dest}")
+            endif()
+        endforeach()
+    endif()
+endfunction()
+
+function(kate_add_static_plugin _name)
+    set(_srcs ${ARGN})
+    set(_mocs)
+    kate_automoc(_mocs ${_srcs})
+    add_library(${_name} STATIC ${_srcs} ${_mocs})
+    set_property(TARGET ${_name} APPEND PROPERTY COMPILE_DEFINITIONS KDE_STATIC_PLUGIN_NAME=${_name})
+endfunction()
+
+macro(kate_macos_app_icon _outvar _icns _png)
+    set(${_outvar})
+    if(EXISTS ${CMAKE_SOURCE_DIR}/qt4compat/data/${_icns})
+        set(${_outvar} ${CMAKE_SOURCE_DIR}/qt4compat/data/${_icns})
+    elseif(EXISTS ${_png})
+        find_program(SIPS_EXECUTABLE sips)
+        if(SIPS_EXECUTABLE)
+            set(${_outvar} ${CMAKE_CURRENT_BINARY_DIR}/${_icns})
+            add_custom_command(OUTPUT ${${_outvar}}
+                COMMAND ${SIPS_EXECUTABLE} -s format icns ${_png} --out ${${_outvar}}
+                DEPENDS ${_png}
+                COMMENT "Generating ${_icns} with sips"
+                VERBATIM)
+            set_source_files_properties(${${_outvar}} PROPERTIES GENERATED TRUE)
         endif()
     endif()
+    if(${_outvar})
+        set_source_files_properties(${${_outvar}} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+        set(MACOSX_BUNDLE_ICON_FILE ${_icns})
+    endif()
+endmacro()
+
+function(kate_set_bundle_properties _target _name _identifier _info)
+    set_target_properties(${_target} PROPERTIES
+        OUTPUT_NAME "${_name}"
+        MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/cmake/MacOSXBundleInfo.plist.in
+        MACOSX_BUNDLE_BUNDLE_NAME "${_name}"
+        MACOSX_BUNDLE_GUI_IDENTIFIER "${_identifier}"
+        MACOSX_BUNDLE_INFO_STRING "${_info}"
+        MACOSX_BUNDLE_LONG_VERSION_STRING "${KATE_VERSION}"
+        MACOSX_BUNDLE_SHORT_VERSION_STRING "${KATE_VERSION}"
+        MACOSX_BUNDLE_BUNDLE_VERSION "${KATE_VERSION}"
+        MACOSX_BUNDLE_COPYRIGHT "(c) 2000-2013 The Kate Authors"
+    )
 endfunction()
