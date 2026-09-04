@@ -43,7 +43,7 @@ fi
 
 # extra C libraries in Debian layout (pcre2 headers): ~/barracuda/deproot
 DEPROOT="${DEPROOT:-/home/sgr/barracuda/deproot/usr}"
-INCS="-I$GEN -I$ROOT/qt4compat/include -I$ROOT -I$ROOT/includes -I$ROOT/ktexteditor"
+INCS="-I$GEN -I$ROOT/qt4compat/include -I$ROOT/qt4compat/include/KDE -I$ROOT -I$ROOT/includes -I$ROOT/ktexteditor"
 [ -d "$DEPROOT/include" ] && INCS="$INCS -I$DEPROOT/include"
 INCS="$INCS -I$QTINC -I$QTINC/QtCore -I$QTINC/QtGui -I$QTINC/QtXml -I$QTINC/QtScript -I$QTINC/QtNetwork -I$QTINC/Qt"
 DEFS="-DQT_NO_KEYWORDS_NOT_USED -D_LARGEFILE64_SOURCE -DKATE_INSTALL_DATADIR=\"/usr/share/kate-qt4\""
@@ -65,7 +65,7 @@ for f in $FILES; do
         elif [ -f "$dir/$m.h" ]; then src="$dir/$m.h"
         else
             # header lives elsewhere (qt4compat keeps headers in include/): search the include path
-            for idir in "$ROOT/qt4compat/include" "$ROOT/qt4compat/include/kparts" "$ROOT/qt4compat/include/sonnet" $(echo "$EXTRA" | tr ' ' '\n' | sed -n 's/^-I//p'); do
+            for idir in "$ROOT/qt4compat/include" "$ROOT/qt4compat/include/KDE" "$ROOT/qt4compat/include/kparts" "$ROOT/qt4compat/include/sonnet" $(echo "$EXTRA" | tr ' ' '\n' | sed -n 's/^-I//p'); do
                 if [ -f "$idir/$m.h" ]; then src="$idir/$m.h"; break; fi
             done
             # private headers next to the source: X_p.h is not the moc source; keep cpp fallback

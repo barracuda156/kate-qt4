@@ -103,6 +103,7 @@ include_directories(
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/includes
     ${CMAKE_SOURCE_DIR}/qt4compat/include
+    ${CMAKE_SOURCE_DIR}/qt4compat/include/KDE
     ${QT_INCLUDES}
     ${ZLIB_INCLUDE_DIRS}
     ${PCRE2_INCLUDE_DIRS}
