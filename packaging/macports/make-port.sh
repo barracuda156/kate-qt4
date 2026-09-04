@@ -156,8 +156,15 @@ def block(sumsfile):
     return ''.join('                    %s \\\n' % l.strip() for l in open(sumsfile))
 new = ('checksums           ${distname}${extract.suffix} \\\n' + block(base_sums)
        + '                    ${overlay} \\\n' + block(overlay_sums)).rstrip(' \\\n') + '\n'
-s, n = re.subn(r'^checksums[^\n]*(?:\\\n[^\n]*)*\n', new, s, count=1, flags=re.M)
-assert n == 1, 'checksums block not found'
+# the block is the "checksums" line plus every line that follows a line
+# ending in a backslash
+lines = s.split('\n')
+start = next(i for i, l in enumerate(lines) if l.startswith('checksums'))
+end = start
+while lines[end].rstrip().endswith('\\'):
+    end += 1
+lines[start:end + 1] = new.rstrip('\n').split('\n')
+s = '\n'.join(lines)
 s, n = re.subn(r'^patchfiles[ \t]+[^\n]*\n', 'patchfiles          %s\n' % patchfiles, s, count=1, flags=re.M)
 assert n == 1, 'patchfiles line not found'
 if revision:
