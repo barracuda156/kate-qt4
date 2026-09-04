@@ -45,6 +45,11 @@ KEncodingFileDialog::KEncodingFileDialog(const QString &startDir, const QString 
 
     m_fileDialog = new QFileDialog(this, QString(), dir, KFileDialog::qtFilter(filter));
     m_fileDialog->setOption(QFileDialog::DontUseNativeDialog, true);
+    // Detail (tree) view: a normal vertical scrollbar and wheel scrolling
+    // over the whole list. The default List view is a wrapping QListView -
+    // it flows into columns, so it gets a horizontal scrollbar and the wheel
+    // only scrolls when the pointer is over the bar (seen on 10.6).
+    m_fileDialog->setViewMode(QFileDialog::Detail);
     m_fileDialog->setWindowFlags(Qt::Widget);
     m_fileDialog->setSizeGripEnabled(false);
     m_fileDialog->setAcceptMode(type == KFileDialog::Saving ? QFileDialog::AcceptSave : QFileDialog::AcceptOpen);
