@@ -59,6 +59,11 @@ function(kate_link_whole_archive _target _lib)
     else()
         target_link_libraries(${_target} -Wl,--whole-archive ${_lib} -Wl,--no-whole-archive)
     endif()
+    # $<TARGET_FILE:...> embedded in a linker-flag string isn't parsed by
+    # target_link_libraries() for build-order purposes the way a bare target
+    # name is, so without this make can link _target before _lib exists:
+    #   ld: file not found: .../libkatepartinterfaces.a
+    add_dependencies(${_target} ${_lib})
 endfunction()
 
 include(CMakeParseArguments)
