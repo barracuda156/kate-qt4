@@ -51,6 +51,20 @@ checksums           ${distname}${extract.suffix} \
                     sha256  1d9bbf27fb5edb4767a0dc0ac911e395d67e0825a0c1708527fde25f4faffb35 \
                     size    3812702 \
                     ${overlay} \
+                    rmd160  4573ed67ad87378922a9e178f2664d12a9725db9 \
+                    sha256  7876ef435982f9223430276d895a5717e826038e48a3f1356f0ac2fced7e44be \
+                    size    2399120
+                    rmd160  dad5df583d9405ad2a483d828cb6764dbeeb53e8 \
+                    sha256  1d9bbf27fb5edb4767a0dc0ac911e395d67e0825a0c1708527fde25f4faffb35 \
+                    size    3812702 \
+                    ${overlay} \
+                    rmd160  7aa05d47c37dd9d37da71c70607aedcd74302ec5 \
+                    sha256  2c4f311117d5b07c71d93b7616e0a75295e8870d0eaf0d7be77fb1f720594bdf \
+                    size    2399836
+                    rmd160  dad5df583d9405ad2a483d828cb6764dbeeb53e8 \
+                    sha256  1d9bbf27fb5edb4767a0dc0ac911e395d67e0825a0c1708527fde25f4faffb35 \
+                    size    3812702 \
+                    ${overlay} \
                     rmd160  f0ac09c7db3c2126457d9447bfc0da70a1a49df3 \
                     sha256  5517ffd7afb05e7db4082eb03463fbf558e0be4eee2ceec1e869dc4eb25947c5 \
                     size    2400268

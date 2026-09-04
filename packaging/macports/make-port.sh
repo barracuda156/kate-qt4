@@ -119,8 +119,17 @@ done
 patchfiles=${patchfiles# }
 
 # ---- overlay tarball ------------------------------------------------------
+# Reproducible: git archive would stamp the commit id and its date into the
+# tar, so the same content would get a new checksum after every commit (the
+# Portfile sync commit included). Export the files and tar them with fixed
+# owner, sorted names and the date of the last commit that touched any of
+# them (GNU tar; the script runs on the Linux box).
 OVERLAY=kate-qt4-overlay-$VERSION.tar.xz
-git archive --format=tar "$COMMIT_SHA" $(cat "$TMP/overlay") | xz -9 > "$DIST/$OVERLAY"
+mkdir -p "$TMP/export"
+git archive --format=tar "$COMMIT_SHA" $(cat "$TMP/overlay") | tar -x -C "$TMP/export"
+OVERLAY_MTIME=$(git log -1 --format=%ct "$COMMIT_SHA" -- $(cat "$TMP/overlay"))
+tar --format=ustar --sort=name --owner=0 --group=0 --numeric-owner --mtime="@$OVERLAY_MTIME" \
+    -cf - -C "$TMP/export" $(cat "$TMP/overlay") | xz -9 > "$DIST/$OVERLAY"
 
 # ---- base archive (for checksums and the check below) ---------------------
 BASEFILE=$DIST/kate-$BASE.tar.gz
