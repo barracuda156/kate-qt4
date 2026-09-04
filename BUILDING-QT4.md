@@ -95,3 +95,28 @@ User definitions go into `~/Library/Application Support/Kate/katepart/syntax/`
 * tests (`tests/`, option `BUILD_TESTING`, off);
 * spell checking (Sonnet is stubbed), remote files (no KIO), "Get Hot New
   Stuff" downloads, D-Bus scripting, X11 session management, translations.
+
+## The MacPorts port
+
+`packaging/macports/kate-qt4/Portfile` builds "upstream Kate at one commit,
+plus patches, plus one overlay tarball":
+
+* the base is GitHub's archive of the upstream commit in
+  `packaging/macports/upstream-base` (the KDE/4.14 branch head), fetched by
+  the github PortGroup;
+* `files/patch-<area>.diff` hold every change to an upstream file, one patch
+  per source area (`part`, `ktexteditor`, `kwrite`, `kate`, `addons`);
+* `kate-qt4-overlay-<version>.tar.xz`, hosted by the port's maintainer,
+  holds every file that does not exist upstream (qt4compat, cmake, the Kate
+  application glue, the syntax definitions, docs) plus the few upstream files
+  rewritten from scratch, listed in `packaging/macports/replaced-files.txt`.
+  It is unpacked over the sources before patching. Nothing is deleted in the
+  port, so a file this build stops using must be harmless when left in the
+  tree (unreferenced sources are; data globs need an exclusion, see
+  `part/syntax/data/CMakeLists.txt`).
+
+`packaging/macports/make-port.sh` generates patches, overlay and the
+Portfile's checksum lines from a commit, then reconstructs the tree from
+base + overlay + patches and checks it matches. Run it after committing,
+then commit the updated Portfile.
+

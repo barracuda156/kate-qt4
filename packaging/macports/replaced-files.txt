@@ -1,0 +1,21 @@
+# Upstream Kate files the port ships as whole replacements (inside the
+# overlay tarball) instead of patching, because this build rewrote them from
+# scratch. Globs as understood by the shell's "case". Everything else that
+# differs from the upstream base goes into the patches in files/.
+# See make-port.sh; the script warns when a patched file looks rewritten.
+CMakeLists.txt
+addons/CMakeLists.txt
+addons/kate/CMakeLists.txt
+addons/kate/search/CMakeLists.txt
+kate/CMakeLists.txt
+kate/app/CMakeLists.txt
+kate/app/katemain.cpp
+kate/data/CMakeLists.txt
+kate/data/icons/CMakeLists.txt
+kate/filetree/CMakeLists.txt
+ktexteditor/CMakeLists.txt
+kwrite/CMakeLists.txt
+part/data/CMakeLists.txt
+part/script/data/CMakeLists.txt
+part/syntax/data/CMakeLists.txt
+part/syntax/data/*.xml

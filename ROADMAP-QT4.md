@@ -28,8 +28,13 @@ dragging in a subsystem (KIO, kfile) for one widget.
 
 Rules for both tiers: C++98/gnu++11, Qt 4 idioms only, every source passes
 `qt4compat/tools/syntax-check.sh` on Linux before it goes to the Mac, no
-cmake/build/link on the Linux box, one commit per logical change, distfile
-and Portfile checksums regenerated after each commit.
+cmake/build/link on the Linux box, one commit per logical change, port
+artifacts (patches, overlay, Portfile checksums) regenerated with
+`packaging/macports/make-port.sh` after each commit. Packaging rule: edits
+to upstream files stay small hunks (they become patches); anything
+substantial is a new file (it goes into the overlay); a file rewritten from
+scratch is listed in `packaging/macports/replaced-files.txt`; never rely on
+deleting an upstream file, the port does not delete.
 
 ## Done
 
