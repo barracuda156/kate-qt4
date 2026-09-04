@@ -77,9 +77,15 @@ depends_lib-append  port:zlib \
                     port:bzip2 \
                     port:pcre2
 
-# Kate 4.14 is C++98 code; gnu++11 keeps the 'register' declarations legal
-# without asking anything of the compiler beyond C++11.
-compiler.cxx_standard   2011
+# Kate 4.14 is C++98 code and is built as gnu++98 (see the top CMakeLists).
+# Do NOT request C++11 here: on 10.6 PowerPC that blacklists Apple's gcc and
+# makes MacPorts fall back to a macports-gccNN whose libstdc++ conflicts with
+# the system libstdc++ that Qt 4 links, and the two C++ runtimes corrupt the
+# heap (Kate crashed at startup). With no C++ standard forced, the port uses
+# the same default compiler as qt4-mac and links the same runtime. If your
+# global default_compilers is a macports gcc, build this port with the Apple
+# compiler (e.g. "sudo port -f install kate-qt4 configure.compiler=gcc-4.2"
+# on 10.6, or clang on newer systems) so it matches Qt 4.
 
 configure.args-append \
                     -DPERL_EXECUTABLE=${prefix}/bin/perl5 \

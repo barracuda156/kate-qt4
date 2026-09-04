@@ -18,13 +18,20 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
 endif()
 
-# C++11 keeps the old sources building with new GCCs (no 'register' errors)
-if(NOT CMAKE_VERSION VERSION_LESS 3.1)
-    if(NOT CMAKE_CXX_STANDARD)
-        set(CMAKE_CXX_STANDARD 11)
-    endif()
-    set(CMAKE_CXX_STANDARD_REQUIRED OFF)
-    set(CMAKE_CXX_EXTENSIONS ON)
+# The sources are C++98. Build them as gnu++98: that keeps the 'register'
+# keyword legal on every compiler (a hard error in the C++17 default of new
+# GCCs, which is the only reason C++11 was requested before) WITHOUT demanding
+# a C++11 compiler. Requiring C++11 forced MacPorts to pick a newer compiler
+# than Qt 4 was built with (macports-gcc on 10.6 PowerPC, where Apple gcc has
+# no C++11): its libstdc++ and the system libstdc++ under Qt were then both
+# loaded, and mixing two C++ runtimes in one process corrupted the heap - Kate
+# crashed dereferencing a bogus QSharedData pointer at first view creation.
+# gnu++98 lets the port use the same compiler, hence the same C++ runtime, as
+# Qt 4 (Apple gcc on 10.6, clang on 10.15).
+include(CheckCXXCompilerFlag)
+check_cxx_compiler_flag("-std=gnu++98" KATE_HAS_STD_GNUXX98)
+if(KATE_HAS_STD_GNUXX98)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++98")
 endif()
 
 # Qt 4.8 (vendored FindQt4.cmake in cmake/, CMake 4 dropped it)
