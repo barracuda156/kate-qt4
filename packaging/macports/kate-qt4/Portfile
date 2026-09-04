@@ -47,6 +47,13 @@ depends_extract-append \
                     port:xz
 
 checksums           ${distname}${extract.suffix} \
+                    rmd160  dad5df583d9405ad2a483d828cb6764dbeeb53e8 \
+                    sha256  1d9bbf27fb5edb4767a0dc0ac911e395d67e0825a0c1708527fde25f4faffb35 \
+                    size    3812702 \
+                    ${overlay} \
+                    rmd160  f0ac09c7db3c2126457d9447bfc0da70a1a49df3 \
+                    sha256  5517ffd7afb05e7db4082eb03463fbf558e0be4eee2ceec1e869dc4eb25947c5 \
+                    size    2400268
                     rmd160  0000000000000000000000000000000000000000 \
                     sha256  0000000000000000000000000000000000000000000000000000000000000000 \
                     size    0 \
@@ -62,7 +69,7 @@ post-extract {
 }
 
 patch.pre_args      -p1
-patchfiles          patch-part.diff
+patchfiles          patch-part.diff patch-ktexteditor.diff patch-kwrite.diff patch-kate.diff patch-addons.diff patch-misc.diff
 
 # pcre2 is the regular expression engine of syntax highlighting and search
 depends_lib-append  port:zlib \

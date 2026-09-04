@@ -65,7 +65,7 @@ git diff --no-renames --diff-filter=M --name-only "$BASE" "$COMMIT_SHA" > "$TMP/
 git diff --no-renames --diff-filter=A --name-only "$BASE" "$COMMIT_SHA" > "$TMP/added"
 git diff --no-renames --diff-filter=D --name-only "$BASE" "$COMMIT_SHA" > "$TMP/deleted"
 
-replaced_patterns=$(grep -v '^[[:space:]]*#' $HERE/replaced-files.txt | grep -v '^[[:space:]]*$')
+replaced_patterns=$(grep -v '^[[:space:]]*#' $HERE/replaced-files.txt | grep -v '^[[:space:]]*$' || true)
 is_replaced() {
     local f=$1 p
     for p in $replaced_patterns; do
@@ -106,7 +106,7 @@ area_of() {
 }
 patchfiles=""
 for area in part ktexteditor kwrite kate addons misc; do
-    paths=$(while read -r f; do [ "$(area_of "$f")" = "$area" ] && echo "$f"; done < "$TMP/patched")
+    paths=$(while read -r f; do if [ "$(area_of "$f")" = "$area" ]; then echo "$f"; fi; done < "$TMP/patched")
     [ -n "$paths" ] || continue
     # shellcheck disable=SC2086
     git diff --no-renames "$BASE" "$COMMIT_SHA" -- $paths > "$FILESDIR/patch-$area.diff"
