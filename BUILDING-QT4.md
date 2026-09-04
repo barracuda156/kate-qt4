@@ -20,6 +20,11 @@ no kdeinit, no X11.
   of syntax highlighting and search, the same engine upstream Kate uses
   through QRegularExpression, so the shipped highlighting definitions behave
   identically. JIT is used when the library provides it.
+* On macOS, `makeicns` (MacPorts port of the same name) to build the
+  application icons from the PNGs at build time. Without it a prebuilt
+  `qt4compat/data/<app>.icns` is used when present
+  (`qt4compat/tools/make-icns.py` makes one without a Mac), and as a last
+  resort `sips`, which can write icns only from 10.7 on.
 * A C++ compiler; the sources are C++98 and build with `-std=gnu++11` (the
   default set by CMake >= 3.1) which also avoids `register`-keyword errors
   with new GCCs.

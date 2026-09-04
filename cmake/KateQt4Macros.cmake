@@ -60,13 +60,17 @@
 #   kate/plugins/<component>/). Plugin directories are processed before
 #   kate/app (see the root CMakeLists.txt).
 #
-# kate_macos_app_icon(<outvar> <icon.icns> <icon.png>)
+# kate_macos_app_icon(<outvar> <icon.icns> <png128> [<png32> [<png16>]])
 #   Sets <outvar> to the .icns source file to add to a MACOSX_BUNDLE target
 #   (with MACOSX_PACKAGE_LOCATION Resources) and MACOSX_BUNDLE_ICON_FILE in
-#   the calling scope: a prebuilt qt4compat/data/<icon.icns> is used when
-#   present, otherwise the icon is generated at build time with sips
-#   (available on every macOS since 10.4) from <icon.png>. <outvar> stays
-#   empty when neither is possible.
+#   the calling scope. The icon is generated at build time with makeicns
+#   (MacPorts port:makeicns; classic icns entries every macOS reads) from
+#   the PNGs; without makeicns a prebuilt qt4compat/data/<icon.icns> is used
+#   if present (qt4compat/tools/make-icns.py makes one from the same PNGs
+#   without a Mac), and as a last resort sips through cmake/MakeIcns.cmake
+#   (sips writes icns from 10.7 on; the wrapper fails with a message before
+#   that instead of leaving no file). <outvar> stays empty, with a warning,
+#   when nothing is possible.
 #
 # kate_set_bundle_properties(<target> <BundleName> <bundle-identifier> <info-string>)
 #   The MACOSX_BUNDLE_* properties shared by the application bundles
@@ -287,17 +291,43 @@ function(kate_add_static_plugin _name)
     set_property(GLOBAL APPEND PROPERTY KATE_STATIC_PLUGINS ${_name})
 endfunction()
 
-macro(kate_macos_app_icon _outvar _icns _png)
+macro(kate_macos_app_icon _outvar _icns _png128)
     set(${_outvar})
-    if(EXISTS ${CMAKE_SOURCE_DIR}/qt4compat/data/${_icns})
+    find_program(MAKEICNS_EXECUTABLE makeicns)
+    if(MAKEICNS_EXECUTABLE)
+        # makeicns (MacPorts port:makeicns) writes the classic entries every
+        # macOS reads; ARGN may carry the 32 and 16 pixel sources
+        set(_makeicns_args -128 ${_png128})
+        set(_makeicns_deps ${_png128})
+        set(_extra ${ARGN})
+        list(LENGTH _extra _n)
+        if(_n GREATER 0)
+            list(GET _extra 0 _png32)
+            list(APPEND _makeicns_args -32 ${_png32})
+            list(APPEND _makeicns_deps ${_png32})
+        endif()
+        if(_n GREATER 1)
+            list(GET _extra 1 _png16)
+            list(APPEND _makeicns_args -16 ${_png16})
+            list(APPEND _makeicns_deps ${_png16})
+        endif()
+        set(${_outvar} ${CMAKE_CURRENT_BINARY_DIR}/${_icns})
+        add_custom_command(OUTPUT ${${_outvar}}
+            COMMAND ${MAKEICNS_EXECUTABLE} ${_makeicns_args} -out ${${_outvar}}
+            DEPENDS ${_makeicns_deps}
+            COMMENT "Generating ${_icns} with makeicns"
+            VERBATIM)
+        set_source_files_properties(${${_outvar}} PROPERTIES GENERATED TRUE)
+    elseif(EXISTS ${CMAKE_SOURCE_DIR}/qt4compat/data/${_icns})
         set(${_outvar} ${CMAKE_SOURCE_DIR}/qt4compat/data/${_icns})
-    elseif(EXISTS ${_png})
+    elseif(EXISTS ${_png128})
         find_program(SIPS_EXECUTABLE sips)
         if(SIPS_EXECUTABLE)
             set(${_outvar} ${CMAKE_CURRENT_BINARY_DIR}/${_icns})
             add_custom_command(OUTPUT ${${_outvar}}
-                COMMAND ${SIPS_EXECUTABLE} -s format icns ${_png} --out ${${_outvar}}
-                DEPENDS ${_png}
+                COMMAND ${CMAKE_COMMAND} -DSIPS=${SIPS_EXECUTABLE} -DPNG=${_png128} -DICNS=${${_outvar}}
+                        -P ${CMAKE_SOURCE_DIR}/cmake/MakeIcns.cmake
+                DEPENDS ${_png128} ${CMAKE_SOURCE_DIR}/cmake/MakeIcns.cmake
                 COMMENT "Generating ${_icns} with sips"
                 VERBATIM)
             set_source_files_properties(${${_outvar}} PROPERTIES GENERATED TRUE)
@@ -306,6 +336,8 @@ macro(kate_macos_app_icon _outvar _icns _png)
     if(${_outvar})
         set_source_files_properties(${${_outvar}} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
         set(MACOSX_BUNDLE_ICON_FILE ${_icns})
+    else()
+        message(WARNING "no application icon for ${_icns}: install makeicns, or add qt4compat/data/${_icns}")
     endif()
 endmacro()
 

@@ -1,5 +1,5 @@
-# Application icon. On macOS the bundle's kate.icns is generated from
-# hi128-app-kate.png by kate_macos_app_icon() in ../../app/CMakeLists.txt;
+# Application icon. On macOS the bundle's kate.icns is generated from the
+# 128/32/16 pixel PNGs here by kate_macos_app_icon() in ../../app/CMakeLists.txt;
 # the in-application icon ("kate" in KIcon lookups) comes from the icon
 # theme compiled into qt4compat. Elsewhere install the hicolor set.
 if(NOT APPLE)

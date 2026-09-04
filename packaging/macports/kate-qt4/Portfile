@@ -69,7 +69,8 @@ patchfiles          patch-part.diff patch-ktexteditor.diff patch-kwrite.diff pat
 set python_branch   3.13
 depends_build-append \
                     port:perl5 \
-                    port:python[string map {. {}} ${python_branch}]
+                    port:python[string map {. {}} ${python_branch}] \
+                    port:makeicns
 
 # pcre2 is the regular expression engine of syntax highlighting and search
 depends_lib-append  port:zlib \

@@ -62,7 +62,10 @@ set(kate_SRCS katemain.cpp ${CMAKE_CURRENT_BINARY_DIR}/katebuiltinplugins.cpp)
 kate_automoc(kate_SRCS katemain.cpp)
 
 if(APPLE)
-    kate_macos_app_icon(kate_ICON_SRCS kate.icns ${CMAKE_SOURCE_DIR}/kate/data/icons/hi128-app-kate.png)
+    kate_macos_app_icon(kate_ICON_SRCS kate.icns
+        ${CMAKE_SOURCE_DIR}/kate/data/icons/hi128-app-kate.png
+        ${CMAKE_SOURCE_DIR}/kate/data/icons/hi32-app-kate.png
+        ${CMAKE_SOURCE_DIR}/kate/data/icons/hi16-app-kate.png)
     add_executable(kate MACOSX_BUNDLE ${kate_SRCS} ${kate_ICON_SRCS})
     kate_set_bundle_properties(kate Kate org.kde.kate "Kate - Advanced Text Editor")
 else()

@@ -5,7 +5,9 @@ kate_automoc(kwrite_SRCS ${kwrite_SRCS})
 
 if(APPLE)
     kate_macos_app_icon(kwrite_ICON_SRCS kwrite.icns
-        ${CMAKE_SOURCE_DIR}/qt4compat/data/icons/oxygen/128x128/apps/accessories-text-editor.png)
+        ${CMAKE_SOURCE_DIR}/qt4compat/data/icons/oxygen/128x128/apps/accessories-text-editor.png
+        ${CMAKE_SOURCE_DIR}/qt4compat/data/icons/oxygen/32x32/apps/accessories-text-editor.png
+        ${CMAKE_SOURCE_DIR}/qt4compat/data/icons/oxygen/16x16/apps/accessories-text-editor.png)
     add_executable(kwrite MACOSX_BUNDLE ${kwrite_SRCS} ${kwrite_ICON_SRCS})
     kate_set_bundle_properties(kwrite KWrite org.kde.kwrite "KWrite - Text Editor")
 else()
