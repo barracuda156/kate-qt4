@@ -55,4 +55,10 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/io)
 if(BZIP2_FOUND)
     set_property(SOURCE src/io/kfilterbase.cpp src/io/kbzip2filter.cpp APPEND PROPERTY COMPILE_DEFINITIONS HAVE_BZIP2=1)
     include_directories(${BZIP2_INCLUDE_DIR})
+    # FindBZip2.cmake already probes whether bzlib only exports the
+    # BZ2_-prefixed symbols (every bzlib since 1.0 does); wire its result
+    # into the macro kbzip2filter.cpp checks to pick the right names.
+    if(BZIP2_NEED_PREFIX)
+        set_property(SOURCE src/io/kbzip2filter.cpp APPEND PROPERTY COMPILE_DEFINITIONS NEED_BZ2_PREFIX=1)
+    endif()
 endif()
