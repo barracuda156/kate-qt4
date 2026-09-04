@@ -21,7 +21,7 @@ PortGroup           legacysupport 1.1
 github.setup        KDE kate f17e4c99b64efca8afa42bc5511ffe73c8ec2370
 name                kate-qt4
 version             4.14.3.qt4.0
-revision            13
+revision            14
 categories          editors aqua
 license             {LGPL-2+ GPL-2+}
 maintainers         nomaintainer
@@ -51,9 +51,9 @@ checksums           ${distname}${extract.suffix} \
                     sha256  1d9bbf27fb5edb4767a0dc0ac911e395d67e0825a0c1708527fde25f4faffb35 \
                     size    3812702 \
                     ${overlay} \
-                    rmd160  8fd58168ce11662ec1a8dc3a729207721db98d9a \
-                    sha256  1f0b49111cdfbbeeeb7f0fc3fcd0ed32ca330520c52f6535cb955d55f182d0f3 \
-                    size    2345720
+                    rmd160  1b7558056e44d9bd172355439570e2fc707c6395 \
+                    sha256  c7b082f156213d89b05d1373804d521e5b9009bbf07784d3ce1ed083a1f0dd62 \
+                    size    2346256
 
 post-extract {
     # files the port adds, plus the rewritten upstream files listed in
