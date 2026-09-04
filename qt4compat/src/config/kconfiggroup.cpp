@@ -41,6 +41,7 @@
 #include <QtCore/QString>
 #include <QtCore/QTextStream>
 #include <QtCore/QDir>
+#include <QtGui/QColor>
 
 #include <stdlib.h>
 
@@ -352,7 +353,27 @@ QVariant KConfigGroup::convertToQVariant(const char *pKey, const QByteArray& val
             }
             return date;
         }
-        case QVariant::Color:
+        case QVariant::Color: {
+            // qt4compat: real kdelibs defers this to a readEntryGui() hook
+            // kdeui registers at startup, which this single-library port
+            // never provides - every color read (default color schemes are
+            // stored config, not just user overrides) fell through to the
+            // "unhandled type" warning below and returned an invalid
+            // QVariant(), which renders as black: editor foreground and
+            // background alike, hence black-on-black text. Same "r,g,b[,a]"
+            // format as Point/Rect above (KDE's real readEntryGui for
+            // QVariant::Color).
+            const QList<int> list = asIntList(value);
+            if (list.count() != 3 && list.count() != 4) {
+                kError() << errString( pKey, value, aDefault )
+                         << formatError( 3, list.count() );
+                return aDefault;
+            }
+            QColor color(list.at(0), list.at(1), list.at(2));
+            if (list.count() == 4)
+                color.setAlpha(list.at(3));
+            return color;
+        }
         case QVariant::Font:
             kWarning() << "KConfigGroup::readEntry was passed GUI type '"
                     << aDefault.typeName()
@@ -1015,7 +1036,19 @@ void KConfigGroup::writeEntry( const char* key, const QVariant &value,
             return;
         }
 
-        case QVariant::Color:
+        case QVariant::Color: {
+            // qt4compat: mirror of the read-side fix above, same missing
+            // readEntryGui/writeEntryGui hook.
+            const QColor color = value.value<QColor>();
+            QVariantList list;
+            list.insert( 0, color.red() );
+            list.insert( 1, color.green() );
+            list.insert( 2, color.blue() );
+            if (color.alpha() != 255)
+                list.insert( 3, color.alpha() );
+            writeEntry( key, list, flags );
+            return;
+        }
         case QVariant::Font:
             kWarning() << "KConfigGroup::writeEntry was passed GUI type '"
                      << value.typeName()
