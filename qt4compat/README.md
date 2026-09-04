@@ -19,18 +19,21 @@ the code must stay portable to any C++98 compiler and to Linux for testing.
                     KCmdLineArgs, KUrl, KLocale/i18n, kDebug, KUser, ...
     src/config/     vendored kconfig (KConfig, KConfigGroup, KSharedConfig, ini backend)
     src/gui/        KApplication, KGlobalSettings, icons, actions, widgets, dialogs,
-                    KColorScheme
+                    KColorScheme, KAcceleratorManager (vendored), local-only
+                    KUrlRequester and KHistoryComboBox
     src/xmlgui/     vendored KXMLGUI + KMainWindow/KXmlGuiWindow/KToolBar/KMenuBar/KStatusBar
     src/parts/      KParts (Part, ReadOnlyPart, ReadWritePart, MainWindow, PartBase)
     src/io/         KTemporaryFile, KSaveFile, KDirWatch, KFilterDev, KProcess, KShell,
                     KMimeType, KCharsets, KEncodingProber, KService/KServiceTypeTrader
-                    (.desktop files), KPluginLoader/KPluginFactory (static plugins)
+                    (.desktop files), KPluginLoader/KPluginFactory (static plugins),
+                    KUrlCompletion (local paths only)
     src/sonnet/     Sonnet stubs (no spell checking yet; NSSpellChecker comes later)
     data/           icon theme subset and other resources compiled in via qrc
     tools/          syntax-check.sh, gen-forwarders.sh
 
 Everything builds into one static library, `qt4compat`, linked into katepart,
-kwrite and kate.
+kwrite and kate. The regex engine (`KatePcre`, pcre2) is not part of this
+layer: it lives in part/utils and is Kate's own.
 
 ## Rules
 

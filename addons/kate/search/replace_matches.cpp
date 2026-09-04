@@ -25,22 +25,31 @@
 #include <ktexteditor/movingrange.h>
 #include <klocale.h>
 
+#include "kateregexp.h"
+
 ReplaceMatches::ReplaceMatches(QObject *parent) : QObject(parent),
 m_manager(0),
 m_tree(0),
-m_rootIndex(-1)
+m_rootIndex(-1),
+m_regExp(0)
 {
     connect(this, SIGNAL(replaceNextMatch()), this, SLOT(doReplaceNextMatch()), Qt::QueuedConnection);
 }
 
-void ReplaceMatches::replaceChecked(QTreeWidget *tree, const QRegExp &regexp, const QString &replace)
+ReplaceMatches::~ReplaceMatches()
+{
+    delete m_regExp;
+}
+
+void ReplaceMatches::replaceChecked(QTreeWidget *tree, const KateRegExp &regexp, const QString &replace)
 {
     if (m_manager == 0) return;
     if (m_rootIndex != -1) return;
-    
+
     m_tree = tree;
     m_rootIndex = 0;
-    m_regExp = regexp;
+    delete m_regExp;
+    m_regExp = new KateRegExp(regexp);
     m_replaceText = replace;
     m_cancelReplace = false;
     emit replaceNextMatch();
@@ -144,15 +153,15 @@ void ReplaceMatches::doReplaceNextMatch()
             matchLines+= '\n' + doc->line(endLine);
         }
 
-        if (m_regExp.indexIn(matchLines) != 0) {
+        if (m_regExp->indexIn(matchLines, 0, matchLines.length()) != 0) {
             kDebug() << "expression does not match";
             continue;
         }
 
         QString replaceText = m_replaceText;
         replaceText.replace("\\\\", "¤Search&Replace¤");
-        for (int j=1; j<=m_regExp.captureCount(); j++) {
-            replaceText.replace(QString("\\%1").arg(j), m_regExp.cap(j));
+        for (int j=1; j<=m_regExp->numCaptures(); j++) {
+            replaceText.replace(QString("\\%1").arg(j), m_regExp->cap(j));
         }
         replaceText.replace("\\n", "\n");
         replaceText.replace("¤Search&Replace¤", "\\\\");

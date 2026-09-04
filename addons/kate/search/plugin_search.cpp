@@ -45,12 +45,25 @@
 #include <klineedit.h>
 #include <kcolorscheme.h>
 
+#include "kateregexp.h"
+#include "katepcre.h"
+
+#include <kconfiggroup.h>
+
+#include <QDir>
 #include <QKeyEvent>
 #include <QClipboard>
 #include <QMenu>
 #include <QMetaObject>
 #include <QTextDocument>
 #include <QScrollBar>
+
+// uic only sees "ui_search.h" / "ui_results.h" through plugin_search.h (it
+// scans .cpp files, not headers they include) - repeat the includes here so
+// tooling that looks at this translation unit's own text finds them too;
+// harmless, both are include-guarded.
+#include "ui_search.h"
+#include "ui_results.h"
 
 static QAction *menuEntry(QMenu *menu,
                           const QString &before, const QString &after, const QString &desc,
@@ -98,13 +111,33 @@ private:
     }
 };
 
-Results::Results(QWidget *parent): QWidget(parent), matches(0)
+Results::Results(QWidget *parent): QWidget(parent), matches(0), regExp(0), caseSensitive(false), useRegExp(false)
 {
     setupUi(this);
 
     tree->setItemDelegate(new SPHtmlDelegate(tree));
 }
 
+Results::~Results()
+{
+    delete regExp;
+}
+
+// Builds the KateRegExp a search run uses: for a plain-text (non-regex)
+// search, escape() turns the typed text into a pattern that matches it
+// literally (KatePcre has no separate "fixed string" mode, unlike QRegExp).
+// repairPattern() is called exactly once here, on the regex every worker
+// (SearchOpenFiles, SearchDiskFiles) then receives its own copy of - see
+// kateregexpsearch.cpp for the same repairPattern()-then-branch-on-multiline
+// sequence this mirrors.
+static KateRegExp *buildSearchRegExp(const QString &pattern, bool useRegExp, Qt::CaseSensitivity cs)
+{
+    const QString actualPattern = useRegExp ? pattern : KatePcre::escape(pattern);
+    KateRegExp *regExp = new KateRegExp(actualPattern, cs);
+    bool stillMultiLine;
+    regExp->repairPattern(stillMultiLine);
+    return regExp;
+}
 
 K_PLUGIN_FACTORY(KatePluginSearchFactory, registerPlugin<KatePluginSearch>();)
 K_EXPORT_PLUGIN(KatePluginSearchFactory(KAboutData("katesearch","katesearch",ki18n("Search & Replace"), "0.1", ki18n("Search & replace in files"))))
@@ -585,13 +618,13 @@ void KatePluginSearchView::folderFileListChanged()
     // earliest after first event loop.
     // The DiskFile might finish immediately
     if (openList.size() > 0) {
-        m_searchOpenFiles.startSearch(openList, m_curResults->regExp);
+        m_searchOpenFiles.startSearch(openList, *m_curResults->regExp);
     }
     else {
         m_searchOpenFilesDone = true;
     }
 
-    m_searchDiskFiles.startSearch(fileList, m_curResults->regExp);
+    m_searchDiskFiles.startSearch(fileList, *m_curResults->regExp);
 }
 
 
@@ -707,17 +740,14 @@ void KatePluginSearchView::addMatchMark(KTextEditor::Document* doc, int line, in
 
     KTextEditor::Range range(line, column, endLine, endColumn);
 
-    if (m_curResults && !replace) {
-        // special handling for "(?=\\n)" in multi-line search
-        QRegExp tmpReg = m_curResults->regExp;
-        if (m_curResults->regExp.pattern().endsWith("(?=\\n)")) {
-            QString newPatern = tmpReg.pattern();
-            newPatern.replace("(?=\\n)", "$");
-            tmpReg.setPattern(newPatern);
-        }
-
-        if (tmpReg.indexIn(doc->text(range)) != 0) {
-            kDebug() << doc->text(range) << "Does not match" << m_curResults->regExp.pattern();
+    if (m_curResults && !replace && m_curResults->regExp) {
+        // KatePcre's MultiLine option (set by repairPattern() for a pattern
+        // that still spans lines) makes "^"/"$" match at line boundaries
+        // directly, so unlike the old QRegExp-based code there is no
+        // "(?=\\n)" rewrite to special-case here.
+        const QString matchText = doc->text(range);
+        if (m_curResults->regExp->indexIn(matchText, 0, matchText.length()) != 0) {
+            kDebug() << matchText << "Does not match" << m_curResults->regExp->pattern();
             return;
         }
     }
@@ -865,10 +895,12 @@ void KatePluginSearchView::startSearch()
     m_ui.replaceCombo->setDisabled(true);
 
 
-    QRegExp reg(m_ui.searchCombo->currentText(),
-                m_ui.matchCase->isChecked() ? Qt::CaseSensitive : Qt::CaseInsensitive,
-                m_ui.useRegExp->isChecked() ? QRegExp::RegExp : QRegExp::FixedString);
-    m_curResults->regExp = reg;
+    delete m_curResults->regExp;
+    m_curResults->regExp = buildSearchRegExp(m_ui.searchCombo->currentText(),
+                                             m_ui.useRegExp->isChecked(),
+                                             m_ui.matchCase->isChecked() ? Qt::CaseSensitive : Qt::CaseInsensitive);
+    m_curResults->caseSensitive = m_ui.matchCase->isChecked();
+    m_curResults->useRegExp = m_ui.useRegExp->isChecked();
 
     clearMarks();
     m_curResults->tree->clear();
@@ -886,7 +918,7 @@ void KatePluginSearchView::startSearch()
         m_resultBaseDir.clear();
         const QList<KTextEditor::Document*> & documents = m_kateApp->documentManager()->documents();
         addHeaderItem();
-        m_searchOpenFiles.startSearch(documents, reg);
+        m_searchOpenFiles.startSearch(documents, *m_curResults->regExp);
     }
     else if (m_ui.searchPlaceCombo->currentIndex() == 1) {
         m_resultBaseDir = m_ui.folderRequester->text();
@@ -929,12 +961,12 @@ void KatePluginSearchView::startSearch()
         // earliest after first event loop.
         // The DiskFile might finish immediately
         if (openList.size() > 0) {
-            m_searchOpenFiles.startSearch(openList, m_curResults->regExp);
+            m_searchOpenFiles.startSearch(openList, *m_curResults->regExp);
         }
         else {
             m_searchOpenFilesDone = true;
         }
-        m_searchDiskFiles.startSearch(files, reg);
+        m_searchDiskFiles.startSearch(files, *m_curResults->regExp);
     }
 }
 
@@ -961,11 +993,12 @@ void KatePluginSearchView::startSearchWhileTyping()
     m_ui.replaceButton->setDisabled(true);
     m_ui.nextButton->setDisabled(true);
 
-    QRegExp reg(m_ui.searchCombo->currentText(),
-                m_ui.matchCase->isChecked() ? Qt::CaseSensitive : Qt::CaseInsensitive,
-                m_ui.useRegExp->isChecked() ? QRegExp::RegExp : QRegExp::FixedString);
-
-    m_curResults->regExp = reg;
+    delete m_curResults->regExp;
+    m_curResults->regExp = buildSearchRegExp(m_ui.searchCombo->currentText(),
+                                             m_ui.useRegExp->isChecked(),
+                                             m_ui.matchCase->isChecked() ? Qt::CaseSensitive : Qt::CaseInsensitive);
+    m_curResults->caseSensitive = m_ui.matchCase->isChecked();
+    m_curResults->useRegExp = m_ui.useRegExp->isChecked();
 
     clearMarks();
     m_curResults->tree->clear();
@@ -982,7 +1015,7 @@ void KatePluginSearchView::startSearchWhileTyping()
     item->setFlags(item->flags() | Qt::ItemIsTristate);
 
     if (m_ui.searchCombo->currentText().length() >= 2) {
-        m_searchOpenFiles.searchOpenFile(doc, reg, 0);
+        m_searchOpenFiles.searchOpenFile(doc, *m_curResults->regExp, 0);
     }
     searchWhileTypingDone();
 }
@@ -1188,8 +1221,9 @@ void KatePluginSearchView::replaceSingleMatch()
         return;
     }
 
-    if (!res->regExp.exactMatch(doc->text(m_matchRanges[i]->toRange()))) {
-        kDebug() << doc->text(m_matchRanges[i]->toRange()) << "Does not match" << res->regExp.pattern();
+    const QString matchedText = doc->text(m_matchRanges[i]->toRange());
+    if (!res->regExp || !res->regExp->exactMatch(matchedText)) {
+        kDebug() << matchedText << "Does not match" << (res->regExp ? res->regExp->pattern() : QString());
         goToNextMatch();
         return;
     }
@@ -1202,8 +1236,8 @@ void KatePluginSearchView::replaceSingleMatch()
 
     QString replaceText = m_ui.replaceCombo->currentText();
     replaceText.replace("\\\\", "¤Search&Replace¤");
-    for (int j=1; j<=res->regExp.captureCount(); j++) {
-        replaceText.replace(QString("\\%1").arg(j), res->regExp.cap(j));
+    for (int j=1; j<=res->regExp->numCaptures(); j++) {
+        replaceText.replace(QString("\\%1").arg(j), res->regExp->cap(j));
     }
     replaceText.replace("\\n", "\n");
     replaceText.replace("¤Search&Replace¤", "\\\\");
@@ -1254,8 +1288,11 @@ void KatePluginSearchView::replaceChecked()
 
     m_curResults->replace = m_ui.replaceCombo->currentText();
 
+    if (!m_curResults->regExp) {
+        return;
+    }
     m_replacer.replaceChecked(m_curResults->tree,
-                              m_curResults->regExp,
+                              *m_curResults->regExp,
                               m_curResults->replace);
 }
 
@@ -1568,8 +1605,8 @@ void KatePluginSearchView::resultTabChanged(int index)
     m_ui.matchCase->blockSignals(true);
     m_ui.useRegExp->blockSignals(true);
     m_ui.searchCombo->lineEdit()->setText(m_ui.resultTabWidget->tabText(index));
-    m_ui.matchCase->setChecked(res->regExp.caseSensitivity() == Qt::CaseSensitive);
-    m_ui.useRegExp->setChecked(res->regExp.patternSyntax() != QRegExp::FixedString);
+    m_ui.matchCase->setChecked(res->caseSensitive);
+    m_ui.useRegExp->setChecked(res->useRegExp);
     m_ui.searchCombo->blockSignals(false);
     m_ui.matchCase->blockSignals(false);
     m_ui.useRegExp->blockSignals(false);

@@ -21,22 +21,30 @@
 #include "search_open_files.h"
 #include "search_open_files.moc"
 
+#include "kateregexp.h"
+
 #include <QTime>
 
-SearchOpenFiles::SearchOpenFiles(QObject *parent) : QObject(parent), m_nextIndex(-1), m_cancelSearch(true)
+SearchOpenFiles::SearchOpenFiles(QObject *parent) : QObject(parent), m_nextIndex(-1), m_regExp(0), m_cancelSearch(true)
 {
     connect(this, SIGNAL(searchNextFile(int)), this, SLOT(doSearchNextFile(int)), Qt::QueuedConnection);
 }
 
+SearchOpenFiles::~SearchOpenFiles()
+{
+    delete m_regExp;
+}
+
 bool SearchOpenFiles::searching() { return !m_cancelSearch; }
 
-void SearchOpenFiles::startSearch(const QList<KTextEditor::Document*> &list, const QRegExp &regexp)
+void SearchOpenFiles::startSearch(const QList<KTextEditor::Document*> &list, const KateRegExp &regexp)
 {
     if (m_nextIndex != -1) return;
 
     m_docList = list;
     m_nextIndex = 0;
-    m_regExp = regexp;
+    delete m_regExp;
+    m_regExp = new KateRegExp(regexp);
     m_cancelSearch = false;
     m_statusTime.restart();
     emit searchNextFile(0);
@@ -58,7 +66,7 @@ void SearchOpenFiles::doSearchNextFile(int startLine)
 
     // NOTE The document managers signal documentWillBeDeleted() must be connected to
     // cancelSearch(). A closed file could lead to a crash if it is not handled.
-    int line = searchOpenFile(m_docList[m_nextIndex], m_regExp, startLine);
+    int line = searchOpenFile(m_docList[m_nextIndex], *m_regExp, startLine);
     if (line == 0) {
         // file searched go to next
         m_nextIndex++;
@@ -76,21 +84,21 @@ void SearchOpenFiles::doSearchNextFile(int startLine)
     }
 }
 
-int SearchOpenFiles::searchOpenFile(KTextEditor::Document *doc, const QRegExp &regExp, int startLine)
+int SearchOpenFiles::searchOpenFile(KTextEditor::Document *doc, const KateRegExp &regExp, int startLine)
 {
     if (m_statusTime.elapsed() > 100) {
         m_statusTime.restart();
         emit searching(doc->url().pathOrUrl());
     }
 
-    if (regExp.pattern().contains("\\n")) {
+    if (regExp.isMultiLine()) {
         return searchMultiLineRegExp(doc, regExp, startLine);
     }
 
     return searchSingleLineRegExp(doc, regExp, startLine);
 }
 
-int SearchOpenFiles::searchSingleLineRegExp(KTextEditor::Document *doc, const QRegExp &regExp, int startLine)
+int SearchOpenFiles::searchSingleLineRegExp(KTextEditor::Document *doc, const KateRegExp &regExp, int startLine)
 {
     int column;
     QTime time;
@@ -101,24 +109,24 @@ int SearchOpenFiles::searchSingleLineRegExp(KTextEditor::Document *doc, const QR
             kDebug() << "Search time exceeded" << time.elapsed() << line;
             return line;
         }
-        column = regExp.indexIn(doc->line(line));
+        const QString lineText = doc->line(line);
+        column = regExp.indexIn(lineText, 0, lineText.length());
         while (column != -1) {
             if (regExp.cap().isEmpty()) break;
             emit matchFound(doc->url().pathOrUrl(), doc->documentName(), line, column,
-                            doc->line(line), regExp.matchedLength());
-            column = regExp.indexIn(doc->line(line), column + regExp.cap().size());
+                            lineText, regExp.matchedLength());
+            column = regExp.indexIn(lineText, column + regExp.cap().size(), lineText.length());
         }
     }
     return 0;
 }
 
-int SearchOpenFiles::searchMultiLineRegExp(KTextEditor::Document *doc, const QRegExp &regExp, int startLine)
+int SearchOpenFiles::searchMultiLineRegExp(KTextEditor::Document *doc, const KateRegExp &regExp, int startLine)
 {
     int column = 0;
     int line = 0;
     QTime time;
     time.start();
-    QRegExp tmpRegExp = regExp;
 
     if (startLine == 0) {
         // Copy the whole file to a temporary buffer to be able to search newlines
@@ -129,11 +137,10 @@ int SearchOpenFiles::searchMultiLineRegExp(KTextEditor::Document *doc, const QRe
             m_fullDoc += doc->line(i) + '\n';
             m_lineStart << m_fullDoc.size();
         }
-        if (!regExp.pattern().endsWith("$")) {
-            // if regExp ends with '$' leave the extra newline at the end as
-            // '$' will be replaced with (?=\\n), which needs the extra newline
-            m_fullDoc.remove(m_fullDoc.size()-1, 1);
-        }
+        // no trailing-newline juggling needed: with KatePcre::MultiLine (set
+        // automatically by repairPattern() for a still-multi-line pattern)
+        // "$" matches both at the end of the subject and right before every
+        // '\n', so it lands at the end of the last line either way.
     }
     else {
         if (startLine>0 && startLine<m_lineStart.size()) {
@@ -145,15 +152,9 @@ int SearchOpenFiles::searchMultiLineRegExp(KTextEditor::Document *doc, const QRe
         }
     }
 
-    if (regExp.pattern().endsWith("$")) {
-        QString newPatern = tmpRegExp.pattern();
-        newPatern.replace("$", "(?=\\n)");
-        tmpRegExp.setPattern(newPatern);
-    }
-
-    column = tmpRegExp.indexIn(m_fullDoc, column);
+    column = regExp.indexIn(m_fullDoc, column, m_fullDoc.length());
     while (column != -1) {
-        if (tmpRegExp.cap().isEmpty()) break;
+        if (regExp.cap().isEmpty()) break;
         // search for the line number of the match
         int i;
         line = -1;
@@ -169,9 +170,9 @@ int SearchOpenFiles::searchMultiLineRegExp(KTextEditor::Document *doc, const QRe
         emit matchFound(doc->url().pathOrUrl(), doc->documentName(),
                         line,
                         (column - m_lineStart[line]),
-                        doc->line(line).left(column - m_lineStart[line])+tmpRegExp.cap(),
-                        tmpRegExp.matchedLength());
-        column = tmpRegExp.indexIn(m_fullDoc, column + tmpRegExp.matchedLength());
+                        doc->line(line).left(column - m_lineStart[line])+regExp.cap(),
+                        regExp.matchedLength());
+        column = regExp.indexIn(m_fullDoc, column + regExp.matchedLength(), m_fullDoc.length());
 
         if (time.elapsed() > 100) {
             //kDebug() << "Search time exceeded" << time.elapsed() << line;

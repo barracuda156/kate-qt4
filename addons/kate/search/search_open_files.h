@@ -22,9 +22,10 @@
 #define _SEARCH_OPEN_FILES_H_
 
 #include <QObject>
-#include <QRegExp>
 #include <QTime>
 #include <ktexteditor/document.h>
+
+class KateRegExp;
 
 class SearchOpenFiles: public QObject
 {
@@ -32,22 +33,23 @@ class SearchOpenFiles: public QObject
 
 public:
     SearchOpenFiles(QObject *parent = 0);
+    ~SearchOpenFiles();
 
-    void startSearch(const QList<KTextEditor::Document*> &list,const QRegExp &regexp);
+    void startSearch(const QList<KTextEditor::Document*> &list, const KateRegExp &regexp);
     bool searching();
 
 public Q_SLOTS:
     void cancelSearch();
 
     /// return 0 on success or a line number where we stopped.
-    int searchOpenFile(KTextEditor::Document *doc, const QRegExp &regExp, int startLine);
+    int searchOpenFile(KTextEditor::Document *doc, const KateRegExp &regExp, int startLine);
 
 private Q_SLOTS:
     void doSearchNextFile(int startLine);
 
 private:
-    int searchSingleLineRegExp(KTextEditor::Document *doc, const QRegExp &regExp, int startLine);
-    int searchMultiLineRegExp(KTextEditor::Document *doc, const QRegExp &regExp, int startLine);
+    int searchSingleLineRegExp(KTextEditor::Document *doc, const KateRegExp &regExp, int startLine);
+    int searchMultiLineRegExp(KTextEditor::Document *doc, const KateRegExp &regExp, int startLine);
 
 Q_SIGNALS:
     void searchNextFile(int startLine);
@@ -58,7 +60,9 @@ Q_SIGNALS:
 private:
     QList<KTextEditor::Document*> m_docList;
     int                           m_nextIndex;
-    QRegExp                       m_regExp;
+    // owned copy for this search run; a fresh KateRegExp per startSearch()
+    // (see kateregexp.h: copies share the compiled pattern, cheap to make)
+    KateRegExp                   *m_regExp;
     bool                          m_cancelSearch;
     QString                       m_fullDoc;
     QVector<int>                  m_lineStart;

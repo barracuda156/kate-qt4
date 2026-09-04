@@ -370,6 +370,12 @@ bool KatePcre::matchesAt(const QString &text, int offset, int end) const
   return d->match(text, offset, end, PCRE2_ANCHORED) == offset;
 }
 
+bool KatePcre::exactMatch(const QString &text) const
+{
+  return d->match(text, 0, -1, PCRE2_ANCHORED | PCRE2_ENDANCHORED) == 0
+         && d->matchLength == text.length();
+}
+
 int KatePcre::matchedLength() const
 {
   return d->matchLength;

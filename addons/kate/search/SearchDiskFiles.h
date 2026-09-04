@@ -22,12 +22,13 @@
 #define SearchDiskFiles_h
 
 #include <QThread>
-#include <QRegExp>
 #include <QFileInfo>
 #include <QVector>
 #include <QMutex>
 #include <QStringList>
 #include <QTime>
+
+class KateRegExp;
 
 class SearchDiskFiles: public QThread
 {
@@ -38,7 +39,7 @@ public:
     ~SearchDiskFiles();
 
     void startSearch(const QStringList &iles,
-                     const QRegExp &regexp);
+                     const KateRegExp &regexp);
     void run();
 
     bool searching();
@@ -57,7 +58,10 @@ Q_SIGNALS:
     void searching(const QString &file);
 
 private:
-    QRegExp          m_regExp;
+    // owned copy for this search run, so the worker thread never touches the
+    // GUI thread's KateRegExp (see kateregexp.h: copies have independent
+    // match state, sharing only the read-only compiled pattern)
+    KateRegExp      *m_regExp;
     QStringList      m_files;
     bool             m_cancelSearch;
     int              m_matchCount;

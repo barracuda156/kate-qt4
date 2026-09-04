@@ -28,6 +28,7 @@ list(APPEND QT4COMPAT_IO_SRCS
     src/io/kshell_unix.cpp
     src/io/kprocess.cpp
     src/io/kcodecs.cpp
+    src/io/kurlcompletion.cpp
 )
 
 list(APPEND QT4COMPAT_SONNET_SRCS

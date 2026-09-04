@@ -22,10 +22,11 @@
 #define _REPLACE_MATCHES_H_
 
 #include <QObject>
-#include <QRegExp>
 #include <QTreeWidget>
 #include <ktexteditor/document.h>
 #include <kate/documentmanager.h>
+
+class KateRegExp;
 
 class ReplaceMatches: public QObject
 {
@@ -44,9 +45,10 @@ public:
     };
 
     ReplaceMatches(QObject *parent = 0);
+    ~ReplaceMatches();
     void setDocumentManager(Kate::DocumentManager *manager);
 
-    void replaceChecked(QTreeWidget *tree, const QRegExp &regexp, const QString &replace);
+    void replaceChecked(QTreeWidget *tree, const KateRegExp &regexp, const QString &replace);
 
     KTextEditor::Document *findNamed(const QString &name);
 
@@ -65,7 +67,9 @@ private:
     Kate::DocumentManager        *m_manager;
     QTreeWidget                  *m_tree;
     int                           m_rootIndex;
-    QRegExp                       m_regExp;
+    // owned copy; see kateregexp.h and SearchDiskFiles for why m_regExp is
+    // a pointer (no default constructor) rather than a value member
+    KateRegExp                   *m_regExp;
     QString                       m_replaceText;
     bool                          m_cancelReplace;
 };

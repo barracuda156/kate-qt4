@@ -1,45 +1,12 @@
-# Kate interfaces used for the plugins
-include_directories (${CMAKE_SOURCE_DIR}/kate/interfaces)
+# Kate application plugins built into the kate executable. Add a directory
+# here once it is ported (kate_add_static_plugin + kate_install_data for its
+# .desktop under services/ and its ui.rc under kate/plugins/<component>/).
+# Not built: konsole, mailfiles (not needed for a text editor), katesql,
+# replicode, pate, kttsd (see ROADMAP-QT4.md).
 
-# default debug area
-add_definitions ( -DKDE_DEFAULT_DEBUG_AREA=13040 )
+include_directories(
+    ${CMAKE_SOURCE_DIR}/kate/interfaces
+    ${CMAKE_SOURCE_DIR}/kate/app
+)
 
-if(NOT WIN32)
-   add_subdirectory( gdbplugin )   # reading /proc/...
-endif(NOT WIN32)
-
-add_subdirectory( textfilter )
-add_subdirectory( konsole )
-
-add_subdirectory( filebrowser )
-add_subdirectory( mailfiles )
-
-add_subdirectory( tabbarextension )
-add_subdirectory( symbolviewer )
-add_subdirectory( backtracebrowser )
-
-add_subdirectory( filetemplates )
-
-add_subdirectory( kate-ctags )
-add_subdirectory( katebuild-plugin )
-add_subdirectory( search )
-
-add_subdirectory( kttsd )
-
-add_subdirectory( openheader )
-add_subdirectory( xmltools )
-add_subdirectory( xmlcheck )
-
-add_subdirectory( snippets )
-
-add_subdirectory( tabify )
-
-add_subdirectory( katesql )
-
-add_subdirectory( close-except-like )
-
-add_subdirectory( replicode )
-
-macro_optional_add_subdirectory(pate)
-
-macro_optional_add_subdirectory(project)
+add_subdirectory(search)

@@ -22,10 +22,13 @@
 #include "SearchDiskFiles.moc"
 #include <kdebug.h>
 
+#include "kateregexp.h"
+
 #include <QDir>
 #include <QTextStream>
 
 SearchDiskFiles::SearchDiskFiles(QObject *parent) : QThread(parent)
+,m_regExp(0)
 ,m_cancelSearch(true)
 ,m_matchCount(0)
 {}
@@ -34,10 +37,11 @@ SearchDiskFiles::~SearchDiskFiles()
 {
     m_cancelSearch = true;
     wait();
+    delete m_regExp;
 }
 
 void SearchDiskFiles::startSearch(const QStringList &files,
-                               const QRegExp &regexp)
+                               const KateRegExp &regexp)
 {
     if (files.size() == 0) {
         emit searchDone();
@@ -45,7 +49,8 @@ void SearchDiskFiles::startSearch(const QStringList &files,
     }
     m_cancelSearch = false;
     m_files = files;
-    m_regExp = regexp;
+    delete m_regExp;
+    m_regExp = new KateRegExp(regexp);
     m_matchCount = 0;
     m_statusTime.restart();
     start();
@@ -63,7 +68,7 @@ void SearchDiskFiles::run()
             emit searching(fileName);
         }
 
-        if (m_regExp.pattern().contains("\\n")) {
+        if (m_regExp->isMultiLine()) {
             searchMultiLineRegExp(fileName);
         }
         else {
@@ -98,13 +103,13 @@ void SearchDiskFiles::searchSingleLineRegExp(const QString &fileName)
     int column;
     while (!(line=stream.readLine()).isNull()) {
         if (m_cancelSearch) break;
-        column = m_regExp.indexIn(line);
+        column = m_regExp->indexIn(line, 0, line.length());
         while (column != -1) {
-            if (m_regExp.cap().isEmpty()) break;
+            if (m_regExp->cap().isEmpty()) break;
             // limit line length
             if (line.length() > 512) line = line.left(512);
-            emit matchFound(fileName, fileName, i, column, line, m_regExp.matchedLength());
-            column = m_regExp.indexIn(line, column + m_regExp.cap().size());
+            emit matchFound(fileName, fileName, i, column, line, m_regExp->matchedLength());
+            column = m_regExp->indexIn(line, column + m_regExp->cap().size(), line.length());
             m_matchCount++;
             // NOTE: This sleep is here so that the main thread will get a chance to
             // handle any stop button clicks if there are a lot of matches
@@ -121,7 +126,6 @@ void SearchDiskFiles::searchMultiLineRegExp(const QString &fileName)
     int line = 0;
     static QString fullDoc;
     static QVector<int> lineStart;
-    QRegExp tmpRegExp = m_regExp;
 
     if (!file.open(QFile::ReadOnly)) {
         return;
@@ -138,17 +142,16 @@ void SearchDiskFiles::searchMultiLineRegExp(const QString &fileName)
             lineStart << i+1;
         }
     }
-    if (tmpRegExp.pattern().endsWith("$")) {
-        fullDoc += '\n';
-        QString newPatern = tmpRegExp.pattern();
-        newPatern.replace("$", "(?=\\n)");
-        tmpRegExp.setPattern(newPatern);
-    }
+    // no "$" -> "(?=\\n)" rewriting needed: repairPattern() already put the
+    // regex in KatePcre::MultiLine mode when it still spans lines, and in
+    // that mode "$" matches at the end of the subject and right before every
+    // '\n' - i.e. at the end of the last line whether or not the file ends
+    // with a trailing newline.
 
-    column = tmpRegExp.indexIn(fullDoc, column);
+    column = m_regExp->indexIn(fullDoc, column, fullDoc.length());
     while (column != -1) {
         if (m_cancelSearch) break;
-        if (tmpRegExp.cap().isEmpty()) break;
+        if (m_regExp->cap().isEmpty()) break;
         // search for the line number of the match
         int i;
         line = -1;
@@ -164,9 +167,9 @@ void SearchDiskFiles::searchMultiLineRegExp(const QString &fileName)
         emit matchFound(fileName,fileName,
                         line,
                         (column - lineStart[line]),
-                        fullDoc.mid(lineStart[line], column - lineStart[line])+tmpRegExp.cap(),
-                        tmpRegExp.matchedLength());
-        column = tmpRegExp.indexIn(fullDoc, column + tmpRegExp.matchedLength());
+                        fullDoc.mid(lineStart[line], column - lineStart[line])+m_regExp->cap(),
+                        m_regExp->matchedLength());
+        column = m_regExp->indexIn(fullDoc, column + m_regExp->matchedLength(), fullDoc.length());
         m_matchCount++;
         // NOTE: This sleep is here so that the main thread will get a chance to
         // handle any stop button clicks if there are a lot of matches

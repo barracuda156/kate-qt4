@@ -5,9 +5,13 @@
 # upstream shared library existed for out-of-tree plugins, which cannot be
 # loaded here anyway).
 #
-# kate: the executable, katemain.cpp plus katebuiltinplugins.cpp, the list of
-# K_IMPORT_PLUGIN()s that makes the statically linked plugins loadable
-# through KService/KPluginLoader (see qt4compat/include/kpluginloader.h).
+# kate: the executable, katemain.cpp plus katebuiltinplugins.cpp, generated
+# from katebuiltinplugins.cpp.in with one K_IMPORT_PLUGIN() per plugin that
+# registered itself with kate_add_static_plugin() (global property
+# KATE_STATIC_PLUGINS: kate/filetree and the addons/ directories, which the
+# root CMakeLists processes before this one); that is what makes the
+# statically linked plugins loadable through KService/KPluginLoader (see
+# qt4compat/include/kpluginloader.h).
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -46,8 +50,16 @@ target_link_libraries(kateinterfaces
     ${QT_QTCORE_LIBRARY}
 )
 
-set(kate_SRCS katemain.cpp katebuiltinplugins.cpp)
-kate_automoc(kate_SRCS ${kate_SRCS})
+get_property(KATE_STATIC_PLUGINS GLOBAL PROPERTY KATE_STATIC_PLUGINS)
+set(KATE_PLUGIN_IMPORTS)
+foreach(_plugin ${KATE_STATIC_PLUGINS})
+    set(KATE_PLUGIN_IMPORTS "${KATE_PLUGIN_IMPORTS}K_IMPORT_PLUGIN(${_plugin})\n")
+endforeach()
+configure_file(katebuiltinplugins.cpp.in ${CMAKE_CURRENT_BINARY_DIR}/katebuiltinplugins.cpp @ONLY)
+message(STATUS "Kate plugins linked in: ${KATE_STATIC_PLUGINS}")
+
+set(kate_SRCS katemain.cpp ${CMAKE_CURRENT_BINARY_DIR}/katebuiltinplugins.cpp)
+kate_automoc(kate_SRCS katemain.cpp)
 
 if(APPLE)
     kate_macos_app_icon(kate_ICON_SRCS kate.icns ${CMAKE_SOURCE_DIR}/kate/data/icons/hi128-app-kate.png)
@@ -57,9 +69,9 @@ else()
     add_executable(kate ${kate_SRCS})
 endif()
 
-# built-in plugins come first: they depend on kateinterfaces (static link order)
+# the plugins come first: they depend on kateinterfaces (static link order)
 target_link_libraries(kate
-    katefiletreeplugin
+    ${KATE_STATIC_PLUGINS}
     kateinterfaces
     ktexteditor
     qt4compat

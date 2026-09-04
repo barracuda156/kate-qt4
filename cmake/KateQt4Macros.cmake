@@ -47,14 +47,18 @@
 #
 # kate_add_static_plugin(<name> <src.cpp>...)
 #   Builds a KDE-style plugin (K_PLUGIN_FACTORY/K_EXPORT_PLUGIN sources plus a
-#   .desktop service file) as a static library that an application links in.
-#   <name> must be the X-KDE-Library value of the plugin's .desktop file. The
-#   sources are compiled with KDE_STATIC_PLUGIN_NAME=<name>, which makes
-#   K_EXPORT_PLUGIN() emit kde_static_plugin_create_<name>(); the application
-#   picks that up with K_IMPORT_PLUGIN(<name>) in one of its own sources (see
-#   qt4compat/include/kexportplugin.h and kpluginloader.h) and links the
-#   library with target_link_libraries(). Install the .desktop file with
-#   kate_install_data(services FILES <name>.desktop) so the trader lists it.
+#   .desktop service file) as a static library that the kate executable links
+#   in. <name> must be the X-KDE-Library value of the plugin's .desktop file.
+#   The sources are compiled with KDE_STATIC_PLUGIN_NAME=<name>, which makes
+#   K_EXPORT_PLUGIN() emit kde_static_plugin_create_<name>() (see
+#   qt4compat/include/kexportplugin.h and kpluginloader.h). The name is
+#   appended to the global property KATE_STATIC_PLUGINS; kate/app links all
+#   of them and generates katebuiltinplugins.cpp with one K_IMPORT_PLUGIN()
+#   per plugin, so a plugin directory only needs this call plus
+#   target_link_libraries() for what it uses and
+#   kate_install_data(services FILES <name>.desktop) (plus its ui.rc under
+#   kate/plugins/<component>/). Plugin directories are processed before
+#   kate/app (see the root CMakeLists.txt).
 #
 # kate_macos_app_icon(<outvar> <icon.icns> <icon.png>)
 #   Sets <outvar> to the .icns source file to add to a MACOSX_BUNDLE target
@@ -277,6 +281,10 @@ function(kate_add_static_plugin _name)
     kate_automoc(_mocs ${_srcs})
     add_library(${_name} STATIC ${_srcs} ${_mocs})
     set_property(TARGET ${_name} APPEND PROPERTY COMPILE_DEFINITIONS KDE_STATIC_PLUGIN_NAME=${_name})
+    # the kate executable links every registered plugin and generates the
+    # K_IMPORT_PLUGIN() list from this property (kate/app/CMakeLists.txt), so
+    # plugin directories must be processed before kate/app
+    set_property(GLOBAL APPEND PROPERTY KATE_STATIC_PLUGINS ${_name})
 endfunction()
 
 macro(kate_macos_app_icon _outvar _icns _png)

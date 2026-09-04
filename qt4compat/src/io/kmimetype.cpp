@@ -761,6 +761,14 @@ bool KMimeType::isBinaryData(const QByteArray &data)
     return isBufferBinaryData(data);
 }
 
+bool KMimeType::isBinaryData(const QString &fileName)
+{
+    QFile file(fileName);
+    if (!file.open(QIODevice::ReadOnly))
+        return false;
+    return isBufferBinaryData(file.read(512));
+}
+
 bool KMimeType::isBufferBinaryData(const QByteArray &data)
 {
     const int n = qMin(data.size(), 512);

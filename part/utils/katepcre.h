@@ -108,6 +108,13 @@ class KatePcre
     /** true if the pattern matches exactly at offset; remembers the match */
     bool matchesAt(const QString &text, int offset, int end = -1) const;
 
+    /**
+     * true if the pattern matches the whole of text (anchored at both ends,
+     * so alternations are tried until one spans it - QRegExp::exactMatch
+     * semantics); remembers the match
+     */
+    bool exactMatch(const QString &text) const;
+
     /** length of the last match, -1 if the last search failed */
     int matchedLength() const;
     /** start of capture nth (0 = whole match) of the last match, -1 if unset */

@@ -62,6 +62,9 @@ class KateRegExp
      */
     int lastIndexIn(const QString &str, int offset, int end) const;
 
+    /** true if the pattern matches all of str (QRegExp::exactMatch) */
+    bool exactMatch(const QString &str) const { return m_regExp.exactMatch(str); }
+
     /**
      * Repairs a regular Expression pattern.
      * This is a workaround to make "." and "\\s" not match

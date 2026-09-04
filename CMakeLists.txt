@@ -11,7 +11,7 @@ set(KATE_VERSION 4.14.3)
 
 option(KATE_BUILD_KWRITE "Build the KWrite editor shell" ON)
 option(KATE_BUILD_KATE "Build the Kate MDI application" ON)
-option(KATE_BUILD_ADDONS "Build addons/plugins (not ported yet)" OFF)
+option(KATE_BUILD_ADDONS "Build the Kate addons that have been ported (see addons/kate/CMakeLists.txt)" ON)
 option(BUILD_TESTING "Build tests (not ported yet)" OFF)
 
 if(NOT CMAKE_BUILD_TYPE)
@@ -107,10 +107,13 @@ if(KATE_BUILD_KWRITE)
     add_subdirectory(kwrite)
 endif()
 if(KATE_BUILD_KATE)
+    # the addons are static plugins linked into the kate executable; they
+    # register themselves (kate_add_static_plugin) and must be seen before
+    # kate/app generates the import list and links them
+    if(KATE_BUILD_ADDONS)
+        add_subdirectory(addons)
+    endif()
     add_subdirectory(kate)
-endif()
-if(KATE_BUILD_ADDONS)
-    add_subdirectory(addons)
 endif()
 if(BUILD_TESTING)
     add_subdirectory(tests)

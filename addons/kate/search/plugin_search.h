@@ -38,6 +38,7 @@
 #include "replace_matches.h"
 
 class KateSearchCommand;
+class KateRegExp;
 namespace KTextEditor{
     class MovingRange;
 }
@@ -47,9 +48,19 @@ class Results: public QWidget, public Ui::Results
     Q_OBJECT
 public:
     Results(QWidget *parent = 0);
-    int     matches;
-    QRegExp regExp;
-    QString replace;
+    ~Results();
+    int         matches;
+    // owned; rebuilt (delete + new) for every search run against this tab.
+    // Not default-constructible (KateRegExp always needs a pattern), so it
+    // is a pointer rather than a value member; 0 until the first search.
+    KateRegExp *regExp;
+    // caseSensitive/useRegExp mirror the matchCase/useRegExp checkboxes that
+    // produced regExp: KateRegExp (unlike QRegExp) does not expose its case
+    // sensitivity or whether it is a literal/regex pattern, so resultTabChanged()
+    // needs them kept alongside it to restore the checkboxes for this tab.
+    bool        caseSensitive;
+    bool        useRegExp;
+    QString     replace;
 };
 
 // This class keeps the focus inside the S&R plugin when pressing tab/shift+tab by overriding focusNextPrevChild()

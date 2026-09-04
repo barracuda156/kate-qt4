@@ -1,14 +1,13 @@
-
-# building separately or as part of kdesdk?
-if(NOT KDE4_FOUND)
-    cmake_minimum_required( VERSION 2.6 )
-    find_package(KDE4 REQUIRED)
-    ADD_DEFINITIONS(-DKDE_DEFAULT_DEBUG_AREA=13040)
-    include_directories(${KDE4_INCLUDES})
-    include_directories(${KDE4_KIO_INCLUDES})
-    include_directories(${CMAKE_CURRENT_BINARY_DIR})
-endif(NOT KDE4_FOUND)
-
+# Search & Replace plugin ("Search and Replace" tool view): search in a
+# folder, in open files or in the current project; plain-text or regular-
+# expression matching on KatePart's pcre2-based engine (KateRegExp/KatePcre,
+# part/search and part/utils); replace with per-match checkboxes; folder
+# listing and disk-file search run on background QThreads. Upstream this is
+# a dynamically loaded Kate/Plugin; here it is a static library linked into
+# the kate executable, imported there by kate/app/katebuiltinplugins.cpp.
+# The service file and the XMLGUI definition are installed as data so
+# KServiceTypeTrader finds the plugin and Kate::XMLGUIClient finds
+# kate/plugins/katesearch/ui.rc.
 
 set(katesearchplugin_PART_SRCS
     plugin_search.cpp
@@ -19,14 +18,22 @@ set(katesearchplugin_PART_SRCS
     htmldelegate.cpp
 )
 
-kde4_add_ui_files(katesearchplugin_PART_SRCS search.ui results.ui)
+kate_add_ui_files(katesearchplugin_PART_SRCS search.ui results.ui)
 
-kde4_add_plugin(katesearchplugin ${katesearchplugin_PART_SRCS})
+# kateregexp.h / katepcre.h (part/search, part/utils) - the pcre2-based
+# regex engine this plugin's disk/open-file search and replace use instead
+# of QRegExp.
+include_directories(${CMAKE_SOURCE_DIR}/part/search ${CMAKE_SOURCE_DIR}/part/utils)
 
-target_link_libraries(katesearchplugin ${KDE4_KDEUI_LIBS} ${KDE4_KDECORE_LIBS} ${KDE4_KTEXTEDITOR_LIBS} kateinterfaces)
+kate_add_static_plugin(katesearchplugin ${katesearchplugin_PART_SRCS})
 
-########### install files ###############
-install(TARGETS katesearchplugin DESTINATION ${PLUGIN_INSTALL_DIR})
-install(FILES ui.rc DESTINATION ${DATA_INSTALL_DIR}/kate/plugins/katesearch)
-install(FILES katesearch.desktop DESTINATION ${SERVICES_INSTALL_DIR})
+target_link_libraries(katesearchplugin
+    kateinterfaces
+    ktexteditor
+    qt4compat
+    ${QT_QTGUI_LIBRARY}
+    ${QT_QTCORE_LIBRARY}
+)
 
+kate_install_data(kate/plugins/katesearch FILES ui.rc APPS kate)
+kate_install_data(services FILES katesearch.desktop APPS kate)

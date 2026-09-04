@@ -56,6 +56,8 @@ public:
     static QString defaultMimeType();
     static Ptr defaultMimeTypePtr();
     static bool isBinaryData(const QByteArray &data);
+    /** as in kdelibs: looks at the first bytes of the file */
+    static bool isBinaryData(const QString &fileName);
     static bool isBufferBinaryData(const QByteArray &data);
     static QString iconNameForUrl(const KUrl &url);
     static QString favIconForUrl(const KUrl &url);
