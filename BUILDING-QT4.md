@@ -25,9 +25,14 @@ no kdeinit, no X11.
   `qt4compat/data/<app>.icns` is used when present
   (`qt4compat/tools/make-icns.py` makes one without a Mac), and as a last
   resort `sips`, which can write icns only from 10.7 on.
-* A C++ compiler; the sources are C++98 and build with `-std=gnu++11` (the
-  default set by CMake >= 3.1) which also avoids `register`-keyword errors
-  with new GCCs.
+* A C++ compiler. The sources are C++98 and are built as `-std=gnu++98`,
+  which keeps the `register` keyword legal on every compiler without
+  requiring C++11. IMPORTANT: build with the same compiler Qt 4 was built
+  with, so the two link the same C++ runtime. Loading two `libstdc++` in one
+  process (a MacPorts gcc here and the system `libstdc++` under a Qt built
+  with Apple's gcc) corrupts the heap - Kate crashed at startup on 10.6 that
+  way. Requiring C++11 is what pulled in the second runtime (it blacklisted
+  Apple gcc-4.2 on 10.6), so the build no longer does.
 
 ## macOS
 

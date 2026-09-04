@@ -26,7 +26,8 @@ dragging in a subsystem (KIO, kfile) for one widget.
   check and fixing includes, docs/Portfile/distfile sync, validation scripts.
   Delegated to a Sonnet agent with the spec, verified by the F tier.
 
-Rules for both tiers: C++98/gnu++11, Qt 4 idioms only, every source passes
+Rules for both tiers: C++98 (built as gnu++98; never a C++11 feature, or
+the port cannot link Qt 4's C++ runtime), Qt 4 idioms only, every source passes
 `qt4compat/tools/syntax-check.sh` on Linux before it goes to the Mac, no
 cmake/build/link on the Linux box, one commit per logical change, port
 artifacts (patches, overlay, Portfile checksums) regenerated with

@@ -6,7 +6,9 @@ either as thin wrappers over Qt or as vendored kdelibs 4.14 sources (LGPL 2.1)
 with their KDE-specific dependencies cut. There is no D-Bus, no kdeinit,
 no ksycoca, no KIO: everything is local files and in-process.
 
-Target: macOS 10.5/10.6 PowerPC, Qt 4.8.7, gcc 16 with `-std=gnu++11`, but
+Target: macOS 10.5/10.6 PowerPC, Qt 4.8.7, built as `-std=gnu++98` with the
+same compiler as Qt 4 (Apple gcc on 10.6; a mismatched libstdc++ corrupts
+the heap). On the Linux side gcc 16 is used for the static syntax check, but
 the code must stay portable to any C++98 compiler and to Linux for testing.
 
 ## Layout
