@@ -1,19 +1,32 @@
-########### next target ###############
+# Symbol Viewer plugin ("Symbol List" tool view): parses the current
+# document with a small per-language parser (cpp_parser.cpp etc.) and lists
+# functions/macros/structures in a tree. Upstream this is a dynamically
+# loaded Kate/Plugin; here it is a static library linked into the kate
+# executable, imported there by kate/app/katebuiltinplugins.cpp.
 
-set(katesymbolviewerplugin_PART_SRCS cpp_parser.cpp tcl_parser.cpp fortran_parser.cpp perl_parser.cpp 
-php_parser.cpp xslt_parser.cpp ruby_parser.cpp python_parser.cpp bash_parser.cpp ecma_parser.cpp plugin_katesymbolviewer.cpp )
+set(katesymbolviewerplugin_PART_SRCS
+    cpp_parser.cpp
+    tcl_parser.cpp
+    fortran_parser.cpp
+    perl_parser.cpp
+    php_parser.cpp
+    xslt_parser.cpp
+    ruby_parser.cpp
+    python_parser.cpp
+    bash_parser.cpp
+    ecma_parser.cpp
+    plugin_katesymbolviewer.cpp
+)
 
+kate_add_static_plugin(katesymbolviewerplugin ${katesymbolviewerplugin_PART_SRCS})
 
-kde4_add_plugin(katesymbolviewerplugin ${katesymbolviewerplugin_PART_SRCS})
+target_link_libraries(katesymbolviewerplugin
+    kateinterfaces
+    ktexteditor
+    qt4compat
+    ${QT_QTGUI_LIBRARY}
+    ${QT_QTCORE_LIBRARY}
+)
 
-
-
-target_link_libraries(katesymbolviewerplugin  ${KDE4_KDEUI_LIBS} kateinterfaces ${KDE4_KTEXTEDITOR_LIBS} )
-
-install(TARGETS katesymbolviewerplugin  DESTINATION ${PLUGIN_INSTALL_DIR} )
-
-
-########### install files ###############
-
-install( FILES ui.rc  DESTINATION  ${DATA_INSTALL_DIR}/kate/plugins/katesymbolviewer )
-install( FILES katesymbolviewer.desktop  DESTINATION  ${SERVICES_INSTALL_DIR} )
+kate_install_data(kate/plugins/katesymbolviewer FILES ui.rc APPS kate)
+kate_install_data(services FILES katesymbolviewer.desktop APPS kate)

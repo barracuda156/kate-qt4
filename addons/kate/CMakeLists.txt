@@ -10,3 +10,11 @@ include_directories(
 )
 
 add_subdirectory(search)
+add_subdirectory(symbolviewer)
+add_subdirectory(kate-ctags)
+add_subdirectory(tabbarextension)
+add_subdirectory(textfilter)
+add_subdirectory(openheader)
+add_subdirectory(backtracebrowser)
+add_subdirectory(xmlcheck)
+add_subdirectory(snippets)

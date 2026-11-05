@@ -1,4 +1,10 @@
-########### next target ###############
+# Backtrace Browser plugin ("Backtrace Browser" tool view): parses a
+# pasted/loaded gdb backtrace, jumps to the matching source line, using a
+# background QThread (btfileindexer.cpp) to index configured search folders
+# so relative filenames in the backtrace can be resolved. Upstream this is
+# a dynamically loaded Kate/Plugin; here it is a static library linked into
+# the kate executable, imported there by kate/app/katebuiltinplugins.cpp.
+# No ui.rc: the plugin adds no menu/toolbar actions.
 
 set(katebacktracebrowserplugin_PART_SRCS
     katebacktracebrowser.cpp
@@ -6,15 +12,17 @@ set(katebacktracebrowserplugin_PART_SRCS
     btfileindexer.cpp
     btdatabase.cpp
 )
-set(katebacktracebrowserplugin_PART_UI
-    btbrowserwidget.ui
-    btconfigwidget.ui
+
+kate_add_ui_files(katebacktracebrowserplugin_PART_SRCS btbrowserwidget.ui btconfigwidget.ui)
+
+kate_add_static_plugin(katebacktracebrowserplugin ${katebacktracebrowserplugin_PART_SRCS})
+
+target_link_libraries(katebacktracebrowserplugin
+    kateinterfaces
+    ktexteditor
+    qt4compat
+    ${QT_QTGUI_LIBRARY}
+    ${QT_QTCORE_LIBRARY}
 )
-kde4_add_ui_files(katebacktracebrowserplugin_PART_SRCS ${katebacktracebrowserplugin_PART_UI} )
-kde4_add_plugin(katebacktracebrowserplugin ${katebacktracebrowserplugin_PART_SRCS})
-target_link_libraries(katebacktracebrowserplugin ${KDE4_KFILE_LIBS} kateinterfaces ${KDE4_KTEXTEDITOR_LIBS})
 
-########### install files ###############
-
-install( TARGETS katebacktracebrowserplugin DESTINATION ${PLUGIN_INSTALL_DIR} )
-install( FILES katebacktracebrowserplugin.desktop  DESTINATION  ${SERVICES_INSTALL_DIR} )
+kate_install_data(services FILES katebacktracebrowserplugin.desktop APPS kate)

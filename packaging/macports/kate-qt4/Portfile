@@ -77,6 +77,10 @@ depends_lib-append  port:zlib \
                     port:bzip2 \
                     port:pcre2
 
+# Exuberant Ctags for the CTags plugin (the system ctags is BSD ctags);
+# the XML validation plugin uses the system xmllint
+depends_run-append  port:ctags
+
 # Kate 4.14 is C++98 code and is built as gnu++98 (see the top CMakeLists).
 # Do NOT request C++11 here: on 10.6 PowerPC that blacklists Apple's gcc and
 # makes MacPorts fall back to a macports-gccNN whose libstdc++ conflicts with

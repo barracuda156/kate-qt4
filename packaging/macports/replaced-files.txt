@@ -6,7 +6,15 @@
 CMakeLists.txt
 addons/CMakeLists.txt
 addons/kate/CMakeLists.txt
+addons/kate/backtracebrowser/CMakeLists.txt
+addons/kate/kate-ctags/CMakeLists.txt
+addons/kate/openheader/CMakeLists.txt
 addons/kate/search/CMakeLists.txt
+addons/kate/snippets/CMakeLists.txt
+addons/kate/symbolviewer/CMakeLists.txt
+addons/kate/tabbarextension/CMakeLists.txt
+addons/kate/textfilter/CMakeLists.txt
+addons/kate/xmlcheck/CMakeLists.txt
 addons/ktexteditor/CMakeLists.txt
 addons/ktexteditor/exporter/CMakeLists.txt
 addons/ktexteditor/hlselection/CMakeLists.txt

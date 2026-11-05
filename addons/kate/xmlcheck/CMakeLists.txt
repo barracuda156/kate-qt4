@@ -1,20 +1,20 @@
+# XML Checker plugin: runs xmllint on the current document (via a temp
+# file) and lists well-formedness/validation errors, double-clickable to
+# jump to the line. Upstream this is a dynamically loaded Kate/Plugin; here
+# it is a static library linked into the kate executable, imported there by
+# kate/app/katebuiltinplugins.cpp.
 
+set(katexmlcheckplugin_PART_SRCS plugin_katexmlcheck.cpp)
 
-########### next target ###############
+kate_add_static_plugin(katexmlcheckplugin ${katexmlcheckplugin_PART_SRCS})
 
-set(katexmlcheckplugin_PART_SRCS plugin_katexmlcheck.cpp )
+target_link_libraries(katexmlcheckplugin
+    kateinterfaces
+    ktexteditor
+    qt4compat
+    ${QT_QTGUI_LIBRARY}
+    ${QT_QTCORE_LIBRARY}
+)
 
-kde4_add_plugin(katexmlcheckplugin ${katexmlcheckplugin_PART_SRCS})
-
-target_link_libraries(katexmlcheckplugin ${KDE4_KDEUI_LIBS} ${KDE4_KTEXTEDITOR_LIBS} kateinterfaces )
-
-install(TARGETS katexmlcheckplugin  DESTINATION ${PLUGIN_INSTALL_DIR} )
-
-
-########### install files ###############
-
-install( FILES ui.rc  DESTINATION  ${DATA_INSTALL_DIR}/kate/plugins/katexmlcheck )
-install( FILES katexmlcheck.desktop  DESTINATION  ${SERVICES_INSTALL_DIR} )
-
-
-
+kate_install_data(kate/plugins/katexmlcheck FILES ui.rc APPS kate)
+kate_install_data(services FILES katexmlcheck.desktop APPS kate)

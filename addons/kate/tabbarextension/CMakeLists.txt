@@ -1,26 +1,29 @@
-########### next target ###############
+# Tab Bar Extension plugin: an extra tab bar with one button per open
+# document (KTinyTabBar), configurable location/size/sorting and a dialog
+# for highlighting modified/active/previous tabs (KTinyTabBarConfigDialog,
+# KTinyTabBarConfigPage). Upstream this is a dynamically loaded Kate/Plugin;
+# here it is a static library linked into the kate executable, imported
+# there by kate/app/katebuiltinplugins.cpp.
 
 set(katetabbarextensionplugin_PART_SRCS
-   plugin_katetabbarextension.cpp
-   ktinytabbutton.cpp
-   ktinytabbar.cpp
-   ktinytabbarconfigdialog.cpp
-   ktinytabbarconfigpage.cpp )
-
-set(katetabbarextensionplugin_PART_UI
-    tabbarconfigwidget.ui
+    plugin_katetabbarextension.cpp
+    ktinytabbutton.cpp
+    ktinytabbar.cpp
+    ktinytabbarconfigdialog.cpp
+    ktinytabbarconfigpage.cpp
 )
 
-kde4_add_ui_files(katetabbarextensionplugin_PART_SRCS ${katetabbarextensionplugin_PART_UI} )
+kate_add_ui_files(katetabbarextensionplugin_PART_SRCS tabbarconfigwidget.ui)
 
-kde4_add_plugin(katetabbarextensionplugin ${katetabbarextensionplugin_PART_SRCS})
+kate_add_static_plugin(katetabbarextensionplugin ${katetabbarextensionplugin_PART_SRCS})
 
-target_link_libraries(katetabbarextensionplugin  ${KDE4_KDEUI_LIBS} ${KDE4_KPARTS_LIBS} kateinterfaces )
+target_link_libraries(katetabbarextensionplugin
+    kateinterfaces
+    ktexteditor
+    qt4compat
+    ${QT_QTGUI_LIBRARY}
+    ${QT_QTCORE_LIBRARY}
+)
 
-install(TARGETS katetabbarextensionplugin  DESTINATION ${PLUGIN_INSTALL_DIR} )
-
-
-########### install files ###############
-
-install( FILES ui.rc  DESTINATION  ${DATA_INSTALL_DIR}/kate/plugins/katetabbarextension )
-install( FILES katetabbarextension.desktop  DESTINATION  ${SERVICES_INSTALL_DIR} )
+kate_install_data(kate/plugins/katetabbarextension FILES ui.rc APPS kate)
+kate_install_data(services FILES katetabbarextension.desktop APPS kate)

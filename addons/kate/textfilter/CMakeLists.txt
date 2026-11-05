@@ -1,19 +1,25 @@
-########### next target ###############
+# Text Filter plugin: pipes the selection, or the whole document, through a
+# user-given shell command (KProcess) and replaces it with the command's
+# output, or copies the output to the clipboard; also registers the
+# "textfilter" editor command. Upstream this is a dynamically loaded
+# Kate/Plugin; here it is a static library linked into the kate executable,
+# imported there by kate/app/katebuiltinplugins.cpp.
 
-set(katetextfilterplugin_PART_SRCS plugin_katetextfilter.cpp )
+set(katetextfilterplugin_PART_SRCS
+    plugin_katetextfilter.cpp
+)
 
-set(katetextfilterplugin_PART_UI textfilterwidget.ui)
+kate_add_ui_files(katetextfilterplugin_PART_SRCS textfilterwidget.ui)
 
-kde4_add_ui_files(katetextfilterplugin_PART_SRCS ${katetextfilterplugin_PART_UI} )
-kde4_add_plugin(katetextfilterplugin ${katetextfilterplugin_PART_SRCS})
+kate_add_static_plugin(katetextfilterplugin ${katetextfilterplugin_PART_SRCS})
 
-target_link_libraries(katetextfilterplugin  ${KDE4_KDEUI_LIBS} ${KDE4_KTEXTEDITOR_LIBS} kateinterfaces )
+target_link_libraries(katetextfilterplugin
+    kateinterfaces
+    ktexteditor
+    qt4compat
+    ${QT_QTGUI_LIBRARY}
+    ${QT_QTCORE_LIBRARY}
+)
 
-install(TARGETS katetextfilterplugin  DESTINATION ${PLUGIN_INSTALL_DIR} )
-
-
-########### install files ###############
-
-install( FILES ui.rc  DESTINATION  ${DATA_INSTALL_DIR}/kate/plugins/katetextfilter )
-install( FILES katetextfilter.desktop  DESTINATION  ${SERVICES_INSTALL_DIR} )
-
+kate_install_data(kate/plugins/katetextfilter FILES ui.rc APPS kate)
+kate_install_data(services FILES katetextfilter.desktop APPS kate)

@@ -68,12 +68,12 @@ All are 4.14 sources unless noted; each becomes a static plugin with its
 
 | # | Task | Tier | Notes |
 |---|------|------|-------|
-| 4.1 | symbolviewer (BBEdit function scanner), kate-ctags, tabbarextension, textfilter, openheader, backtracebrowser, xmlcheck, snippets tool view, exporter, hlselection, insertfile, kte_iconinserter | S | need nothing from the shim (hlselection/insertfile: trivial `KJob` forward header) |
+| 4.1 | symbolviewer (BBEdit function scanner), kate-ctags, tabbarextension, textfilter, openheader, backtracebrowser, xmlcheck, snippets tool view, exporter, hlselection, insertfile, kte_iconinserter | S | done (2026-11-05): shim gained the `KFileDialog` dialog class (KDialog over QFileDialog), `KColorDialog` result codes, `kjob.h` forward header; `.ui` headers are generated KDE 4 style (kdialog.h + klocale.h prelude, tr2i18n) so no upstream include hunks; kate-ctags needs Exuberant Ctags (port:ctags), xmlcheck the system xmllint |
 | 4.2 | katebuild-plugin, close-except-like (vendor `KPassivePopup`), tabify, xmltools (vendor `KHistoryComboBox`), autobrace (small `KCModule` base) | S | |
 | 4.3 | project plugin: qjson (MacPorts) for the .kateproject files, vendor `KRecursiveFilterProxyModel`, compile out the terminal tab; take Katana's libgit2 file listing (commit 9e8f013b) | S port, F libgit2 | BBEdit "Projects" |
 | 4.4 | JavaScript editing commands for BBEdit's Text menu gaps: zap gremlins, educate/straighten quotes, prefix/suffix lines, add/remove line numbers, entab/detab; exposed in Tools > Scripts | S | |
 | 4.5 | Cherry-pick Katana fixes: 16b94a99 session save with empty name, 9d52fb59 filebrowser sync, 3dd23f45 MIME check for highlighting | S | |
-| 4.6 | KTextEditor plugin loading in the part (`katepartpluginmanager.cpp`) through the same static-plugin path as Kate plugins | F | needed by 4.1's ktexteditor plugins |
+| 4.6 | KTextEditor plugin loading in the part (`katepartpluginmanager.cpp`) through the same static-plugin path as Kate plugins | F | done (2026-11-05): `kate_add_static_editor_plugin()`, import lists generated per executable (`kate_builtin_plugins_source()`), kwrite links the editor plugins too |
 
 ## Phase 5: spell checking
 
