@@ -35,9 +35,9 @@ homepage            https://kate-editor.org
 
 # written by sync-port.sh once the tag above is pushed
 checksums           ${distname}${extract.suffix} \
-                    rmd160  0 \
-                    sha256  0 \
-                    size    0
+                    rmd160  8e38a6c67414fea039a976aa67940eff3b1b2353 \
+                    sha256  1a34d9c99109aa44567fb4ee5df276fc3964f9317f87465b84cfcf17f235450a \
+                    size    6065835
 
 # Perl and Python 3 run upstream's generators for the derived syntax
 # highlighting definitions (part/syntax/generators) at build time

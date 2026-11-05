@@ -17,7 +17,7 @@
 set -eu
 AUTHOR=barracuda156
 REPO=kate-qt4
-REMOTE=fork
+REMOTE=origin
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
 PORTFILE="$HERE/kate-qt4/Portfile"
