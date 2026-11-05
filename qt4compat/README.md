@@ -4,7 +4,9 @@ This directory is a compatibility layer that lets the KDE 4.14 Kate/KatePart
 sources build against Qt 4.8 only. It provides the kdelibs classes Kate uses,
 either as thin wrappers over Qt or as vendored kdelibs 4.14 sources (LGPL 2.1)
 with their KDE-specific dependencies cut. There is no D-Bus, no kdeinit,
-no ksycoca, no KIO: everything is local files and in-process.
+no ksycoca, no KIO: everything is local files and in-process (`KIO::NetAccess`
+offers synchronous local-file helpers; `kjob.h` only forward-declares `KJob`,
+there are no jobs).
 
 Target: macOS 10.5/10.6 PowerPC, Qt 4.8.7, built as `-std=gnu++98` with the
 same compiler as Qt 4 (Apple gcc on 10.6; a mismatched libstdc++ corrupts
@@ -29,7 +31,9 @@ the code must stay portable to any C++98 compiler and to Linux for testing.
     src/config/     vendored kconfig (KConfig, KConfigGroup, KSharedConfig, ini backend)
     src/gui/        KApplication, KGlobalSettings, icons, actions, widgets, dialogs,
                     KColorScheme, KAcceleratorManager (vendored), local-only
-                    KUrlRequester and KHistoryComboBox
+                    KUrlRequester and KHistoryComboBox, KFileDialog (static
+                    helpers on the native dialogs; the dialog class is a KDialog
+                    hosting a non-native QFileDialog, like KEncodingFileDialog)
     src/xmlgui/     vendored KXMLGUI + KMainWindow/KXmlGuiWindow/KToolBar/KMenuBar/KStatusBar
     src/parts/      KParts (Part, ReadOnlyPart, ReadWritePart, MainWindow, PartBase)
     src/io/         KTemporaryFile, KSaveFile, KDirWatch, KFilterDev, KProcess, KShell,

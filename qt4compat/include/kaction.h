@@ -5,6 +5,7 @@
 #include <QtGui/QWidgetAction>
 #include <kdemacros.h>
 #include <kshortcut.h>
+#include <kguiitem.h>
 
 class KIcon;
 class KActionPrivate;

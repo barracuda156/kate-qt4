@@ -60,6 +60,7 @@ list(APPEND QT4COMPAT_MOC_HEADERS
     include/ktextedit.h
     include/kcolorbutton.h
     include/kwindowsystem.h
+    include/kfiledialog.h
     include/kencodingfiledialog.h
     include/kmimetypechooser.h
     include/kaboutapplicationdialog.h

@@ -9,8 +9,169 @@
 #include <QtCore/QDir>
 #include <QtCore/QFileInfo>
 #include <QtGui/QApplication>
+#include <QtGui/QDialogButtonBox>
 
 static QString s_lastDir;
+
+KFileDialog::KFileDialog(const KUrl &startDir, const QString &filter, QWidget *parent, QWidget *widget)
+    : KDialog(parent), m_fileDialog(0), m_operationMode(Opening), m_mode(KFile::File)
+{
+    Q_UNUSED(widget);
+    setButtons(Ok | Cancel);
+    // Enter is handled by the file widget itself (its name edit or list)
+    setDefaultButton(NoDefault);
+
+    const KUrl startUrl = getStartUrl(startDir, m_recentDirClass);
+    QString dir = startUrl.toLocalFile();
+    QString suggested;
+    if (dir.isEmpty())
+        dir = QDir::homePath();
+    if (QFileInfo(dir).isFile()) {
+        suggested = QFileInfo(dir).fileName();
+        dir = QFileInfo(dir).absolutePath();
+    }
+
+    m_fileDialog = new QFileDialog(this, QString(), dir, qtFilter(filter));
+    m_fileDialog->setOption(QFileDialog::DontUseNativeDialog, true);
+    m_fileDialog->setViewMode(QFileDialog::Detail); // see KEncodingFileDialog
+    m_fileDialog->setWindowFlags(Qt::Widget);
+    m_fileDialog->setSizeGripEnabled(false);
+    // KDialog's Ok/Cancel drive the file widget; hide its own buttons
+    if (QDialogButtonBox *box = m_fileDialog->findChild<QDialogButtonBox *>())
+        box->hide();
+    if (!suggested.isEmpty())
+        m_fileDialog->selectFile(suggested);
+    connect(m_fileDialog, SIGNAL(filesSelected(QStringList)), this, SLOT(slotFilesSelected(QStringList)));
+    connect(m_fileDialog, SIGNAL(rejected()), this, SLOT(slotFileDialogRejected()));
+    setMainWidget(m_fileDialog);
+    setOperationMode(Opening);
+    resize(sizeHint().expandedTo(QSize(640, 480)));
+}
+
+KFileDialog::~KFileDialog()
+{
+}
+
+void KFileDialog::setOperationMode(OperationMode mode)
+{
+    m_operationMode = mode;
+    setCaption(mode == Saving ? i18n("Save As") : i18n("Open"));
+    setButtonText(Ok, mode == Saving ? i18n("&Save") : i18n("&Open"));
+    applyMode();
+}
+
+KFileDialog::OperationMode KFileDialog::operationMode() const
+{
+    return m_operationMode;
+}
+
+void KFileDialog::setMode(KFile::Modes mode)
+{
+    m_mode = mode;
+    applyMode();
+}
+
+KFile::Modes KFileDialog::mode() const
+{
+    return m_mode;
+}
+
+void KFileDialog::applyMode()
+{
+    QFileDialog::FileMode fileMode;
+    if (m_mode & KFile::Directory)
+        fileMode = QFileDialog::Directory;
+    else if (m_mode & KFile::Files)
+        fileMode = QFileDialog::ExistingFiles;
+    else if ((m_mode & KFile::ExistingOnly) || m_operationMode != Saving)
+        fileMode = QFileDialog::ExistingFile;
+    else
+        fileMode = QFileDialog::AnyFile;
+    m_fileDialog->setFileMode(fileMode);
+    m_fileDialog->setOption(QFileDialog::ShowDirsOnly,
+                            (m_mode & KFile::Directory) && !(m_mode & (KFile::File | KFile::Files)));
+    m_fileDialog->setAcceptMode(m_operationMode == Saving ? QFileDialog::AcceptSave : QFileDialog::AcceptOpen);
+    m_fileDialog->setConfirmOverwrite(m_operationMode == Saving);
+}
+
+void KFileDialog::setFilter(const QString &filter)
+{
+    m_fileDialog->setNameFilter(qtFilter(filter));
+}
+
+void KFileDialog::setSelection(const QString &name)
+{
+    m_fileDialog->selectFile(name);
+}
+
+void KFileDialog::setUrl(const KUrl &url, bool clearforward)
+{
+    Q_UNUSED(clearforward);
+    if (url.isLocalFile())
+        m_fileDialog->setDirectory(url.toLocalFile());
+}
+
+KUrl KFileDialog::baseUrl() const
+{
+    return KUrl::fromPath(m_fileDialog->directory().absolutePath());
+}
+
+QString KFileDialog::selectedFile() const
+{
+    return m_selected.isEmpty() ? QString() : m_selected.first();
+}
+
+QStringList KFileDialog::selectedFiles() const
+{
+    return m_selected;
+}
+
+KUrl KFileDialog::selectedUrl() const
+{
+    return m_selected.isEmpty() ? KUrl() : KUrl::fromPath(m_selected.first());
+}
+
+KUrl::List KFileDialog::selectedUrls() const
+{
+    KUrl::List urls;
+    foreach (const QString &f, m_selected)
+        urls.append(KUrl::fromPath(f));
+    return urls;
+}
+
+KPushButton *KFileDialog::okButton() const
+{
+    return button(Ok);
+}
+
+KPushButton *KFileDialog::cancelButton() const
+{
+    return button(Cancel);
+}
+
+void KFileDialog::slotButtonClicked(int button)
+{
+    if (button == Ok) {
+        // QFileDialog::accept() validates the selection and emits
+        // filesSelected() on success; it is protected in Qt 4
+        static_cast<QDialog *>(m_fileDialog)->accept();
+        return;
+    }
+    KDialog::slotButtonClicked(button);
+}
+
+void KFileDialog::slotFilesSelected(const QStringList &files)
+{
+    m_selected = files;
+    if (!files.isEmpty())
+        rememberDir(m_recentDirClass, files.first());
+    accept();
+}
+
+void KFileDialog::slotFileDialogRejected()
+{
+    reject();
+}
 
 /* "*.txt *.text|Text files\n*|All files" -> "Text files (*.txt *.text);;All files (*)" */
 QString KFileDialog::qtFilter(const QString &kdeFilter)
