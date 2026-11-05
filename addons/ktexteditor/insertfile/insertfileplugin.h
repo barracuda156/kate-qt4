@@ -26,7 +26,6 @@
 #include <QtCore/QObject>
 #include <kjob.h>
 #include <kurl.h>
-#include <kio/job.h>
 
 class InsertFilePlugin : public KTextEditor::Plugin
 {
@@ -54,14 +53,10 @@ class InsertFilePluginView : public QObject, public KXMLGUIClient
   public Q_SLOTS:
     /* display a file dialog, and insert the chosen file */
     void slotInsertFile();
-  private Q_SLOTS:
-    void slotFinished( KJob *job );
-    //slotAborted( KIO::Job *job );
   private:
     void insertFile();
     KUrl _file;
     QString _tmpfile;
-    KIO::FileCopyJob *_job;
 };
 
 #endif // _INSERT_FILE_PLUGIN_H_

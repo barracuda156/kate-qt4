@@ -1,18 +1,15 @@
-
-########### next target ###############
-
 set(ktexteditor_hlselection_PART_SRCS hlselectionplugin.cpp )
 
-kde4_add_plugin(ktexteditor_hlselection ${ktexteditor_hlselection_PART_SRCS})
+kate_add_static_editor_plugin(ktexteditor_hlselection ${ktexteditor_hlselection_PART_SRCS})
 
-target_link_libraries(ktexteditor_hlselection  ${KDE4_KIO_LIBS} ${KDE4_KTEXTEDITOR_LIBS} ${KDE4_KDEUI_LIBS} ${KDE4_KFILE_LIBS})
+target_link_libraries(ktexteditor_hlselection
+    ktexteditor
+    qt4compat
+    ${QT_QTGUI_LIBRARY}
+    ${QT_QTCORE_LIBRARY}
+)
 
-install(TARGETS  ktexteditor_hlselection  DESTINATION ${PLUGIN_INSTALL_DIR} )
-
-
-########### install files ###############
-
-install( FILES ktexteditor_hlselection.desktop  DESTINATION  ${SERVICES_INSTALL_DIR} )
+kate_install_data(services FILES ktexteditor_hlselection.desktop)
 
 # Dominik: right now, we do not have any actions, so do not insall ui.rc file
-# install( FILES ktexteditor_hlselectionui.rc  DESTINATION  ${DATA_INSTALL_DIR}/ktexteditor_hlselection )
+# kate_install_data(ktexteditor_hlselection FILES ktexteditor_hlselectionui.rc)

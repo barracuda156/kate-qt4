@@ -8,6 +8,10 @@ addons/CMakeLists.txt
 addons/kate/CMakeLists.txt
 addons/kate/search/CMakeLists.txt
 addons/ktexteditor/CMakeLists.txt
+addons/ktexteditor/exporter/CMakeLists.txt
+addons/ktexteditor/hlselection/CMakeLists.txt
+addons/ktexteditor/insertfile/CMakeLists.txt
+addons/ktexteditor/kte_iconinserter/CMakeLists.txt
 kate/CMakeLists.txt
 kate/app/CMakeLists.txt
 kate/app/katemain.cpp

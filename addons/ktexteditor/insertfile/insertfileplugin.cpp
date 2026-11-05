@@ -22,7 +22,6 @@
 #include <ktexteditor/document.h>
 
 #include <assert.h>
-#include <kio/job.h>
 #include <kaction.h>
 #include <kactioncollection.h>
 #include <kfiledialog.h>
@@ -83,7 +82,6 @@ InsertFilePluginView::InsertFilePluginView( KTextEditor::View *view, const char 
   setObjectName( name );
 
   setComponentData( InsertFilePluginFactory::componentData() );
-  _job = 0;
 
   KAction *action = new KAction( i18n("Insert File..."), this );
   actionCollection()->addAction( "tools_insert_file", action );
@@ -110,26 +108,8 @@ void InsertFilePluginView::slotInsertFile()
     insertFile();
   }
   else {
-    KTemporaryFile tempFile;
-    tempFile.setAutoRemove(false);
-    tempFile.open();
-    _tmpfile = tempFile.fileName();
-
-    KUrl destURL;
-    destURL.setPath( _tmpfile );
-    _job = KIO::file_copy( _file, destURL, 0600, KIO::Overwrite );
-    connect( _job, SIGNAL(result(KJob*)), this, SLOT(slotFinished(KJob*)) );
+    KMessageBox::sorry( (QWidget*)parent(), i18n("Only local files can be inserted."), i18n("Insert File Error") );
   }
-}
-
-void InsertFilePluginView::slotFinished( KJob *job )
-{
-  assert( job == _job );
-  _job = 0;
-  if ( job->error() )
-    KMessageBox::error( (QWidget*)parent(), i18n("Failed to load file:\n\n") + job->errorString(), i18n("Insert File Error") );
-  else
-    insertFile();
 }
 
 void InsertFilePluginView::insertFile()
