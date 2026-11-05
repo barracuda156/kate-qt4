@@ -73,15 +73,4 @@ list(APPEND GENERATED_HIGHLIGHTERS ${_jinja_outputs})
 
 file(GLOB HIGHLIGHTERS "${CMAKE_CURRENT_SOURCE_DIR}/*.xml")
 
-# The MacPorts port builds a patched upstream tree plus an overlay with the
-# files above; nothing deletes files there, so the 4.14 definitions that
-# upstream has since dropped or split (Fortran into fixed/free form) or
-# now derives at build time (DoxygenLua, XSLT: generated above) are still
-# present in that tree. Keep them out so the modes do not appear twice.
-# packaging/macports/unused-upstream-files.txt lists them for make-port.sh.
-set(SUPERSEDED_4_14_DEFINITIONS alert_indent.xml asterisk.xml chicken.xml fortran.xml doxygenlua.xml xslt.xml)
-foreach(_f ${SUPERSEDED_4_14_DEFINITIONS})
-    list(REMOVE_ITEM HIGHLIGHTERS "${CMAKE_CURRENT_SOURCE_DIR}/${_f}")
-endforeach()
-
 kate_install_data(katepart/syntax FILES language.dtd language.xsd syntax.template ${HIGHLIGHTERS} ${GENERATED_HIGHLIGHTERS})

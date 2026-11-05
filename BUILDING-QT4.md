@@ -121,25 +121,19 @@ User definitions go into `~/Library/Application Support/Kate/katepart/syntax/`
 
 ## The MacPorts port
 
-`packaging/macports/kate-qt4/Portfile` builds "upstream Kate at one commit,
-plus patches, plus one overlay tarball":
+The sources are hosted as branch `qt4-pure` of
+https://github.com/barracuda156/kate-qt4, a fork of KDE/kate that carries
+the full upstream history (this tree is the KDE/4.14 branch head f17e4c99
+plus the port's commits; `git diff f17e4c99` is the whole change against
+upstream). `packaging/macports/kate-qt4/Portfile` fetches GitHub's archive
+of a tag (`github.setup barracuda156 kate-qt4 <version> v`, tags are
+`v<version>`) or, while a fix is being iterated before tagging, of a commit
+hash, and builds that tree as it is: no patches, no overlay.
 
-* the base is GitHub's archive of the upstream commit in
-  `packaging/macports/upstream-base` (the KDE/4.14 branch head), fetched by
-  the github PortGroup;
-* `files/patch-<area>.diff` hold every change to an upstream file, one patch
-  per source area (`part`, `ktexteditor`, `kwrite`, `kate`, `addons`);
-* `kate-qt4-overlay-<version>.tar.xz`, hosted by the port's maintainer,
-  holds every file that does not exist upstream (qt4compat, cmake, the Kate
-  application glue, the syntax definitions, docs) plus the few upstream files
-  rewritten from scratch, listed in `packaging/macports/replaced-files.txt`.
-  It is unpacked over the sources before patching. Nothing is deleted in the
-  port, so a file this build stops using must be harmless when left in the
-  tree (unreferenced sources are; data globs need an exclusion, see
-  `part/syntax/data/CMakeLists.txt`).
-
-`packaging/macports/make-port.sh` generates patches, overlay and the
-Portfile's checksum lines from a commit, then reconstructs the tree from
-base + overlay + patches and checks it matches. Run it after committing,
-then commit the updated Portfile.
+After a tag or commit is pushed, `packaging/macports/sync-port.sh <ref>`
+downloads that archive, checks it against the local commit, writes the
+source reference, version and checksums into the in-tree Portfile and
+copies it to the port directory; commit the result. The in-tree copy
+therefore describes the previous tag, the copy in the ports tree is the
+one to build from.
 

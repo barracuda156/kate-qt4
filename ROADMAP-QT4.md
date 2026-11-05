@@ -29,13 +29,14 @@ dragging in a subsystem (KIO, kfile) for one widget.
 Rules for both tiers: C++98 (built as gnu++98; never a C++11 feature, or
 the port cannot link Qt 4's C++ runtime), Qt 4 idioms only, every source passes
 `qt4compat/tools/syntax-check.sh` on Linux before it goes to the Mac, no
-cmake/build/link on the Linux box, one commit per logical change, port
-artifacts (patches, overlay, Portfile checksums) regenerated with
-`packaging/macports/make-port.sh` after each commit. Packaging rule: edits
-to upstream files stay small hunks (they become patches); anything
-substantial is a new file (it goes into the overlay); a file rewritten from
-scratch is listed in `packaging/macports/replaced-files.txt`; never rely on
-deleting an upstream file, the port does not delete.
+cmake/build/link on the Linux box, one commit per logical change. The
+sources are hosted as branch `qt4-pure` of
+https://github.com/barracuda156/kate-qt4 (a fork of KDE/kate with the full
+upstream history; the port fetches GitHub's archive of a tag, or of a
+commit while a fix is being iterated), so upstream files may be edited,
+replaced or deleted freely; the diff against upstream is `git diff
+f17e4c99`. After a tag or commit is pushed, `packaging/macports/sync-port.sh`
+updates the Portfile's source reference and checksums (a "sync" commit).
 
 ## Done
 
