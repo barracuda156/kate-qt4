@@ -6,7 +6,8 @@
 # Environment: QT4ROOT (default /home/sgr/barracuda/qt4root/usr),
 #              SYNTAX_GEN_DIR (default: scratch dir under /tmp).
 # Runs moc/uic for `#include "x.moc"` and `#include "ui_x.h"` found in the
-# sources, then g++ -fsyntax-only. Never links or produces binaries.
+# sources (ui_ includes also in the headers beside each source), then
+# g++ -fsyntax-only. Never links or produces binaries.
 
 set -u
 QT4ROOT="${QT4ROOT:-/home/sgr/barracuda/qt4root/usr}"
@@ -18,7 +19,7 @@ ROOT="$(cd "$HERE/../.." && pwd)"
 GEN="${SYNTAX_GEN_DIR:-/tmp/claude-1001/-home-sgr-barracuda-kate/30204108-34cd-4ff0-a116-09cdaddc4988/scratchpad/syntax-gen}"
 mkdir -p "$GEN"
 
-STD="-std=gnu++11"
+STD="-std=gnu++98"
 EXTRA=""
 FILES=""
 for a in "$@"; do
@@ -77,14 +78,21 @@ for f in $FILES; do
             echo "warning: no source for $m.moc (included by $f)"
         fi
     done
-    # uic for "#include "ui_x.h""
-    for u in $(grep -oE '#include\s+"ui_[A-Za-z0-9_]+\.h"' "$f" | sed -E 's/.*"ui_([^"]+)\.h"/\1/'); do
+    # uic for "#include "ui_x.h"" in the source or in the headers next to it
+    for u in $(cat "$f" "$dir"/*.h 2>/dev/null | grep -oE '#include\s+"ui_[A-Za-z0-9_]+\.h"' | sed -E 's/.*"ui_([^"]+)\.h"/\1/' | sort -u); do
         ui=""
-        for cand in "$dir/$u.ui" "$dir"/*/"$u.ui" "$dir/../$u.ui"; do
+        for cand in "$dir/$u.ui" "$dir"/*/"$u.ui" "$dir/../$u.ui" $(find "$dir/.." -maxdepth 2 -name "$u.ui" 2>/dev/null); do
             [ -f "$cand" ] && { ui="$cand"; break; }
         done
         if [ -n "$ui" ]; then
-            "$UIC" "$ui" -o "$gdir/ui_$u.h" 2>"$gdir/ui_$u.err" || { echo "uic failed: $ui"; cat "$gdir/ui_$u.err"; }
+            # as cmake/KateUic.cmake generates it
+            if "$UIC" -tr tr2i18n "$ui" -o "$gdir/ui_$u.h.tmp" 2>"$gdir/ui_$u.err"; then
+                { printf '#include <kdialog.h>\n#include <klocale.h>\n\n'
+                  sed -e 's/tr2i18n("", 0)/QString()/g; s/tr2i18n("")/QString()/g' "$gdir/ui_$u.h.tmp"; } > "$gdir/ui_$u.h"
+                rm -f "$gdir/ui_$u.h.tmp"
+            else
+                echo "uic failed: $ui"; cat "$gdir/ui_$u.err"
+            fi
         else
             echo "warning: no .ui for ui_$u.h (included by $f)"
         fi

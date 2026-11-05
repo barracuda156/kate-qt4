@@ -58,13 +58,6 @@
 #include <QTextDocument>
 #include <QScrollBar>
 
-// uic only sees "ui_search.h" / "ui_results.h" through plugin_search.h (it
-// scans .cpp files, not headers they include) - repeat the includes here so
-// tooling that looks at this translation unit's own text finds them too;
-// harmless, both are include-guarded.
-#include "ui_search.h"
-#include "ui_results.h"
-
 static QAction *menuEntry(QMenu *menu,
                           const QString &before, const QString &after, const QString &desc,
                           QString menuBefore = QString(), QString menuAfter = QString());

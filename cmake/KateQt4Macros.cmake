@@ -17,7 +17,10 @@
 #   qt4_wrap_cpp for headers that have no matching .cpp in the source list.
 #
 # kate_add_ui_files(<outvar> <file.ui>...)
-#   qt4_wrap_ui wrapper; the ui_*.h files land in ${CMAKE_CURRENT_BINARY_DIR}.
+#   KDE 4 flavoured uic (cmake/KateUic.cmake, after kdelibs' kde4uic.cmake):
+#   strings go through tr2i18n() and every generated header starts with
+#   kdialog.h and klocale.h, which upstream sources rely on transitively.
+#   The ui_*.h files land in ${CMAKE_CURRENT_BINARY_DIR}.
 #
 # kate_install_data(<resource-relative-dir> FILES <file>... [DIRECTORY <dir> [PATTERN <glob>]]
 #                   [APPS <app>...])
@@ -210,9 +213,19 @@ macro(kate_automoc_headers _outvar)
 endmacro()
 
 macro(kate_add_ui_files _outvar)
-    set(_ui_out)
-    qt4_wrap_ui(_ui_out ${ARGN})
-    list(APPEND ${_outvar} ${_ui_out})
+    foreach(_ui ${ARGN})
+        get_filename_component(_ui_abs ${_ui} ABSOLUTE)
+        get_filename_component(_ui_base ${_ui} NAME_WE)
+        set(_ui_header ${CMAKE_CURRENT_BINARY_DIR}/ui_${_ui_base}.h)
+        add_custom_command(OUTPUT ${_ui_header}
+            COMMAND ${CMAKE_COMMAND} -DUIC=${QT_UIC_EXECUTABLE} -DINPUT=${_ui_abs} -DOUTPUT=${_ui_header}
+                    -P ${CMAKE_SOURCE_DIR}/cmake/KateUic.cmake
+            MAIN_DEPENDENCY ${_ui_abs}
+            DEPENDS ${CMAKE_SOURCE_DIR}/cmake/KateUic.cmake
+            COMMENT "Generating ui_${_ui_base}.h"
+            VERBATIM)
+        list(APPEND ${_outvar} ${_ui_header})
+    endforeach()
     include_directories(${CMAKE_CURRENT_BINARY_DIR})
 endmacro()
 
