@@ -1,7 +1,12 @@
-# KWrite: simple SDI editor shell on top of KatePart (pure Qt 4)
+# KWrite: simple SDI editor shell on top of KatePart (pure Qt 4). The
+# KatePart editor plugins (addons/ktexteditor, kate_add_static_editor_plugin)
+# are linked in and imported through the generated katebuiltinplugins.cpp,
+# as in kate/app.
 
 set(kwrite_SRCS kwritemain.cpp kwriteapp.cpp)
 kate_automoc(kwrite_SRCS ${kwrite_SRCS})
+kate_builtin_plugins_source(kwrite_PLUGINS_SRC KTEXTEDITOR_STATIC_PLUGINS)
+list(APPEND kwrite_SRCS ${kwrite_PLUGINS_SRC})
 
 if(APPLE)
     kate_macos_app_icon(kwrite_ICON_SRCS kwrite.icns
@@ -15,6 +20,7 @@ else()
 endif()
 
 target_link_libraries(kwrite
+    ${kwrite_PLUGINS_SRC_LIBS}
     ktexteditor
     qt4compat
     ${QT_QTSCRIPT_LIBRARY}

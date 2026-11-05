@@ -11,7 +11,7 @@ set(KATE_VERSION 4.14.3)
 
 option(KATE_BUILD_KWRITE "Build the KWrite editor shell" ON)
 option(KATE_BUILD_KATE "Build the Kate MDI application" ON)
-option(KATE_BUILD_ADDONS "Build the Kate addons that have been ported (see addons/kate/CMakeLists.txt)" ON)
+option(KATE_BUILD_ADDONS "Build the ported addons: KatePart editor plugins for KWrite and Kate, Kate application plugins (see addons/)" ON)
 option(BUILD_TESTING "Build tests (not ported yet)" OFF)
 
 if(NOT CMAKE_BUILD_TYPE)
@@ -119,16 +119,16 @@ include_directories(
 add_subdirectory(qt4compat)
 add_subdirectory(ktexteditor)
 add_subdirectory(part)
+# the addons are static plugins linked into the executables; they register
+# themselves (kate_add_static_plugin, kate_add_static_editor_plugin) and must
+# be seen before kwrite and kate/app generate their import lists and link them
+if(KATE_BUILD_ADDONS)
+    add_subdirectory(addons)
+endif()
 if(KATE_BUILD_KWRITE)
     add_subdirectory(kwrite)
 endif()
 if(KATE_BUILD_KATE)
-    # the addons are static plugins linked into the kate executable; they
-    # register themselves (kate_add_static_plugin) and must be seen before
-    # kate/app generates the import list and links them
-    if(KATE_BUILD_ADDONS)
-        add_subdirectory(addons)
-    endif()
     add_subdirectory(kate)
 endif()
 if(BUILD_TESTING)

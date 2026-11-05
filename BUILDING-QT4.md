@@ -73,15 +73,22 @@ enables the `kDebug()` output.
 `kate/` builds into the static library `kateinterfaces` (the `Kate::*`
 plugin interfaces and the application classes) and the `kate` executable.
 Plugins are not loaded at run time: a plugin is a static library made with
-`kate_add_static_plugin()`, which registers it in the global CMake property
-`KATE_STATIC_PLUGINS`; `kate/app` links every registered plugin and
-generates `katebuiltinplugins.cpp` (from `katebuiltinplugins.cpp.in`) with
-one `K_IMPORT_PLUGIN()` per plugin. A plugin's `.desktop` file, installed
-under `services/` in the data tree, is what
-`KServiceTypeTrader::query("Kate/Plugin")` lists. The document tree
-(`kate/filetree/`) and the addons under `addons/kate/` (option
-`KATE_BUILD_ADDONS`, on; `addons/kate/CMakeLists.txt` lists the ported
-ones, starting with the multi-file search plugin) are built this way.
+`kate_add_static_plugin()` (Kate application plugins, service type
+`Kate/Plugin`, global CMake property `KATE_STATIC_PLUGINS`) or
+`kate_add_static_editor_plugin()` (KatePart editor plugins,
+`KTextEditor/Plugin`, property `KTEXTEDITOR_STATIC_PLUGINS`). Each
+executable links the plugins it hosts and generates its
+`katebuiltinplugins.cpp` (`kate_builtin_plugins_source()`, from
+`cmake/katebuiltinplugins.cpp.in`) with one `K_IMPORT_PLUGIN()` per plugin:
+`kate` gets both kinds, `kwrite` the editor plugins. A plugin's `.desktop`
+file, installed under `services/` in the data tree, is what
+`KServiceTypeTrader::query()` lists; `KatePluginManager` (application) and
+`KatePartPluginManager` (editor, the "Extensions" page of the editor
+configuration) create the plugins through `KService::createInstance()`.
+The document tree (`kate/filetree/`) and the addons under `addons/` (option
+`KATE_BUILD_ADDONS`, on; `addons/kate/CMakeLists.txt` and
+`addons/ktexteditor/CMakeLists.txt` list the ported ones) are built this
+way.
 Every `kate` invocation starts a new instance (the D-Bus "reuse the running
 Kate" logic is gone); on macOS Finder open requests reach the running
 instance through `QFileOpenEvent`. Dropping a folder onto Kate opens the

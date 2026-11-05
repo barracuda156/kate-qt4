@@ -49,19 +49,33 @@
 #   Files may be given as absolute paths (e.g. generated in the binary dir).
 #
 # kate_add_static_plugin(<name> <src.cpp>...)
+# kate_add_static_editor_plugin(<name> <src.cpp>...)
 #   Builds a KDE-style plugin (K_PLUGIN_FACTORY/K_EXPORT_PLUGIN sources plus a
-#   .desktop service file) as a static library that the kate executable links
-#   in. <name> must be the X-KDE-Library value of the plugin's .desktop file.
+#   .desktop service file) as a static library that the executables link in.
+#   <name> must be the X-KDE-Library value of the plugin's .desktop file.
 #   The sources are compiled with KDE_STATIC_PLUGIN_NAME=<name>, which makes
 #   K_EXPORT_PLUGIN() emit kde_static_plugin_create_<name>() (see
 #   qt4compat/include/kexportplugin.h and kpluginloader.h). The name is
-#   appended to the global property KATE_STATIC_PLUGINS; kate/app links all
-#   of them and generates katebuiltinplugins.cpp with one K_IMPORT_PLUGIN()
-#   per plugin, so a plugin directory only needs this call plus
-#   target_link_libraries() for what it uses and
+#   appended to a global property: KATE_STATIC_PLUGINS for Kate application
+#   plugins (service type Kate/Plugin, linked into kate only) and
+#   KTEXTEDITOR_STATIC_PLUGINS for KatePart editor plugins (KTextEditor/Plugin,
+#   linked into every application that embeds the part: kwrite and kate).
+#   The executables generate their import list from those properties with
+#   kate_builtin_plugins_source(), so a plugin directory only needs this
+#   call plus target_link_libraries() for what it uses and
 #   kate_install_data(services FILES <name>.desktop) (plus its ui.rc under
-#   kate/plugins/<component>/). Plugin directories are processed before
-#   kate/app (see the root CMakeLists.txt).
+#   kate/plugins/<component>/ for Kate plugins, <component>/ for editor
+#   plugins). Plugin directories are processed before the executables (see
+#   the root CMakeLists.txt).
+#
+# kate_builtin_plugins_source(<outvar> <property>...)
+#   Generates ${CMAKE_CURRENT_BINARY_DIR}/katebuiltinplugins.cpp from
+#   cmake/katebuiltinplugins.cpp.in with one K_IMPORT_PLUGIN() per plugin
+#   listed in the named global properties, sets <outvar> to its path (add it
+#   to the executable's own sources: the registrars are static objects that
+#   nothing references, kept by the linker only in object files it links
+#   unconditionally) and <outvar>_LIBS to the plugin targets to link, before
+#   the libraries they use.
 #
 # kate_macos_app_icon(<outvar> <icon.icns> <png128> [<png32> [<png16>]])
 #   Sets <outvar> to the .icns source file to add to a MACOSX_BUNDLE target
@@ -292,16 +306,41 @@ function(kate_install_data _dir)
     endif()
 endfunction()
 
-function(kate_add_static_plugin _name)
+function(_kate_add_static_plugin_impl _property _name)
     set(_srcs ${ARGN})
     set(_mocs)
     kate_automoc(_mocs ${_srcs})
     add_library(${_name} STATIC ${_srcs} ${_mocs})
     set_property(TARGET ${_name} APPEND PROPERTY COMPILE_DEFINITIONS KDE_STATIC_PLUGIN_NAME=${_name})
-    # the kate executable links every registered plugin and generates the
-    # K_IMPORT_PLUGIN() list from this property (kate/app/CMakeLists.txt), so
-    # plugin directories must be processed before kate/app
-    set_property(GLOBAL APPEND PROPERTY KATE_STATIC_PLUGINS ${_name})
+    # the executables link every registered plugin and generate the
+    # K_IMPORT_PLUGIN() list from this property (kate_builtin_plugins_source),
+    # so plugin directories must be processed before them
+    set_property(GLOBAL APPEND PROPERTY ${_property} ${_name})
+endfunction()
+
+function(kate_add_static_plugin _name)
+    _kate_add_static_plugin_impl(KATE_STATIC_PLUGINS ${_name} ${ARGN})
+endfunction()
+
+function(kate_add_static_editor_plugin _name)
+    _kate_add_static_plugin_impl(KTEXTEDITOR_STATIC_PLUGINS ${_name} ${ARGN})
+endfunction()
+
+function(kate_builtin_plugins_source _outvar)
+    set(_plugins)
+    foreach(_property ${ARGN})
+        get_property(_list GLOBAL PROPERTY ${_property})
+        list(APPEND _plugins ${_list})
+    endforeach()
+    set(KATE_PLUGIN_IMPORTS)
+    foreach(_plugin ${_plugins})
+        set(KATE_PLUGIN_IMPORTS "${KATE_PLUGIN_IMPORTS}K_IMPORT_PLUGIN(${_plugin})\n")
+    endforeach()
+    configure_file(${CMAKE_SOURCE_DIR}/cmake/katebuiltinplugins.cpp.in
+                   ${CMAKE_CURRENT_BINARY_DIR}/katebuiltinplugins.cpp @ONLY)
+    message(STATUS "${PROJECT_NAME}: plugins linked into ${CMAKE_CURRENT_SOURCE_DIR}: ${_plugins}")
+    set(${_outvar} ${CMAKE_CURRENT_BINARY_DIR}/katebuiltinplugins.cpp PARENT_SCOPE)
+    set(${_outvar}_LIBS ${_plugins} PARENT_SCOPE)
 endfunction()
 
 macro(kate_macos_app_icon _outvar _icns _png128)

@@ -6,12 +6,12 @@
 # loaded here anyway).
 #
 # kate: the executable, katemain.cpp plus katebuiltinplugins.cpp, generated
-# from katebuiltinplugins.cpp.in with one K_IMPORT_PLUGIN() per plugin that
-# registered itself with kate_add_static_plugin() (global property
-# KATE_STATIC_PLUGINS: kate/filetree and the addons/ directories, which the
-# root CMakeLists processes before this one); that is what makes the
-# statically linked plugins loadable through KService/KPluginLoader (see
-# qt4compat/include/kpluginloader.h).
+# by kate_builtin_plugins_source() with one K_IMPORT_PLUGIN() per plugin that
+# registered itself with kate_add_static_plugin() (Kate plugins: kate/filetree
+# and addons/kate) or kate_add_static_editor_plugin() (KatePart editor
+# plugins: addons/ktexteditor), directories the root CMakeLists processes
+# before this one; that is what makes the statically linked plugins loadable
+# through KService/KPluginLoader (see qt4compat/include/kpluginloader.h).
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -50,15 +50,9 @@ target_link_libraries(kateinterfaces
     ${QT_QTCORE_LIBRARY}
 )
 
-get_property(KATE_STATIC_PLUGINS GLOBAL PROPERTY KATE_STATIC_PLUGINS)
-set(KATE_PLUGIN_IMPORTS)
-foreach(_plugin ${KATE_STATIC_PLUGINS})
-    set(KATE_PLUGIN_IMPORTS "${KATE_PLUGIN_IMPORTS}K_IMPORT_PLUGIN(${_plugin})\n")
-endforeach()
-configure_file(katebuiltinplugins.cpp.in ${CMAKE_CURRENT_BINARY_DIR}/katebuiltinplugins.cpp @ONLY)
-message(STATUS "Kate plugins linked in: ${KATE_STATIC_PLUGINS}")
+kate_builtin_plugins_source(kate_PLUGINS_SRC KATE_STATIC_PLUGINS KTEXTEDITOR_STATIC_PLUGINS)
 
-set(kate_SRCS katemain.cpp ${CMAKE_CURRENT_BINARY_DIR}/katebuiltinplugins.cpp)
+set(kate_SRCS katemain.cpp ${kate_PLUGINS_SRC})
 kate_automoc(kate_SRCS katemain.cpp)
 
 if(APPLE)
@@ -74,7 +68,7 @@ endif()
 
 # the plugins come first: they depend on kateinterfaces (static link order)
 target_link_libraries(kate
-    ${KATE_STATIC_PLUGINS}
+    ${kate_PLUGINS_SRC_LIBS}
     kateinterfaces
     ktexteditor
     qt4compat

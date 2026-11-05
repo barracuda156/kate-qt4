@@ -7,6 +7,7 @@ CMakeLists.txt
 addons/CMakeLists.txt
 addons/kate/CMakeLists.txt
 addons/kate/search/CMakeLists.txt
+addons/ktexteditor/CMakeLists.txt
 kate/CMakeLists.txt
 kate/app/CMakeLists.txt
 kate/app/katemain.cpp
@@ -17,5 +18,5 @@ ktexteditor/CMakeLists.txt
 kwrite/CMakeLists.txt
 part/data/CMakeLists.txt
 part/script/data/CMakeLists.txt
-part/syntax/data/CMakeLists.txt
 part/syntax/data/*.xml
+part/syntax/data/CMakeLists.txt

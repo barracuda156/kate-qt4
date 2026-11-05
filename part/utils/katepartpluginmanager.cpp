@@ -216,12 +216,12 @@ void KatePartPluginManager::loadPlugin (KatePartPluginInfo &item)
     Q_ASSERT( openDependencies.empty() );
   }
 
-  // qt4compat: there is no plugin loader without KService/ksycoca, so
-  // editor plugins can not be loaded in this build; keep the bookkeeping sane
-  item.plugin = 0;
-  if (item.service())
-    kWarning() << "editor plugins are not available in this build, cannot load" << item.service()->name();
-  item.load = false;
+  // try to load, else reset load flag!
+  QString error;
+  item.plugin = item.service()->createInstance<KTextEditor::Plugin>(this, QVariantList(), &error);
+  if ( !item.plugin )
+    kWarning() << "failed to load plugin" << item.service()->name() << ":" << error;
+  item.load = (item.plugin != 0);
 }
 
 void KatePartPluginManager::unloadPlugin (KatePartPluginInfo &item)
