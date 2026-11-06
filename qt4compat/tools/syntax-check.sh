@@ -86,10 +86,11 @@ for f in $FILES; do
         done
         if [ -n "$ui" ]; then
             # as cmake/KateUic.cmake generates it
-            if "$UIC" -tr tr2i18n "$ui" -o "$gdir/ui_$u.h.tmp" 2>"$gdir/ui_$u.err"; then
+            mkdir -p "$gdir/uic.tmp"
+            if "$UIC" -tr tr2i18n "$ui" -o "$gdir/uic.tmp/ui_$u.h" 2>"$gdir/ui_$u.err"; then
                 { printf '#include <kdialog.h>\n#include <klocale.h>\n\n'
-                  sed -e 's/tr2i18n("", 0)/QString()/g; s/tr2i18n("")/QString()/g' "$gdir/ui_$u.h.tmp"; } > "$gdir/ui_$u.h"
-                rm -f "$gdir/ui_$u.h.tmp"
+                  sed -e 's/tr2i18n("", 0)/QString()/g; s/tr2i18n("")/QString()/g' "$gdir/uic.tmp/ui_$u.h"; } > "$gdir/ui_$u.h"
+                rm -f "$gdir/uic.tmp/ui_$u.h"
             else
                 echo "uic failed: $ui"; cat "$gdir/ui_$u.err"
             fi
